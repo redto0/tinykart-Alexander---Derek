@@ -209,7 +209,7 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
     int begin_of_cluster = 0;
     int length_max_cluster = 0;
     // need to inizate new scan;
-    ScanPoint scan_center_biggest_cluster;
+    ScanPoint scan_center_biggest_cluster{ 0, 0 };
     if ( distance_array[0] != 0 ){
         is_a_gap = true;
     }
@@ -228,19 +228,18 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
             is_a_gap = true;
         }
     }
-    /// TODO FINISH LOOPER
-    // find farest point
-    int farest_point = 0;
-    for(auto i = 1; i < scan.size(); i++ ){
-        if ( distance_array[farest_point] < distance_array[i]){
-            farest_point = i;
-        }
-    }
-    // check if farest point is zero
-    if( scan[farest_point].x <= 0 &&  scan[farest_point].y <= 0){
+    
+    if( length_max_cluster == 0){
+        logger.printf(" no target acquired \n");
         return std::nullopt;
-    }else {
-        return scan[farest_point];
+    } else {
+        scan_center_biggest_cluster.x = scan[begin_of_cluster].x + scan[ length_max_cluster ].x;
+        scan_center_biggest_cluster.x = scan_center_biggest_cluster.x / 2;
+        scan_center_biggest_cluster.y = scan[begin_of_cluster].y + scan[ length_max_cluster ].y;
+        scan_center_biggest_cluster.y = scan_center_biggest_cluster.y / 2;
+
+        logger.printf( " (%hi, %hi) ", (double) scan_center_biggest_cluster.x, (double) scan_center_biggest_cluster.y );
+        return scan_center_biggest_cluster;
     }
 }
 
@@ -313,7 +312,7 @@ void loop() {
                         }
                     }
                 }
-                auto target_pt = find_closest_point( scan, 4.0, 0.3040);
+                auto target_pt = find_gap_naive( scan, 4.0, 0.3040);
                 if( (target_pt.has_value()) ){
                     auto command = pure_pursuit::calculate_command_to_point(tinyKart, target_pt.value(), 1.0);
                     tinyKart->set_steering(command.steering_angle);

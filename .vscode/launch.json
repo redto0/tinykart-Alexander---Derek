@@ -19,7 +19,7 @@
             "svdPath": "C:/Users/bocca/.platformio/platforms/ststm32/misc/svd/STM32H723.svd",
             "preLaunchTask": {
                 "type": "PlatformIO",
-                "task": "Pre-Debug"
+                "task": "Pre-Debug (nucleo_h723zg)"
             }
         },
         {
