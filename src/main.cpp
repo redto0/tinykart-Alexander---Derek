@@ -7,6 +7,9 @@
 #include "pure_pursuit.hpp"
 #include "f1tenth_gap_follow.hpp"
 #include "naive_gap_follow.hpp"
+#include <cmath>
+// added by me
+// #include <bits/stdc++.h>
 
 // Robot control
 TinyKart *tinyKart;
@@ -15,7 +18,8 @@ TinyKart *tinyKart;
 LD06 ld06{};
 
 // Scan processor
-ScanBuilder scan_builder{360 - 90, 90, ScanPoint{0.1524, 0}};
+// was 180, 360
+ScanBuilder scan_builder{180, 360, ScanPoint{0.1524, 0}};
 
 /// Starts/stops the kart
 void estop() {
@@ -44,8 +48,8 @@ void setup() {
 
     // Prepare kart for motion
     ESC esc{THROTTLE_PIN, PWM_MAX_DUTY, PWM_FREQ};
+    // max third para is 0.3, range >1.6
     tinyKart = new TinyKart{STEERING_PIN, esc, 0.3, 4.5};
-
     // Init DMA and UART for LiDAR
     dmaSerialRx5.begin(230'400, [&](volatile LD06Buffer buffer) {
         // On each packet received, copy over to driver.
@@ -56,54 +60,273 @@ void setup() {
     digitalWrite(LED_GREEN, HIGH);
 }
 
+
+/// 
+float maxSpeed = 0.25;
+float startBrakingDistance = 2.4;
+bool isObjectInFornt = false;
+float brakingPercentage = -1;
+float slopeBreaking = 1 / (0.5 - startBrakingDistance);
+
+struct tinyKartMovement{
+    public:
+        void set_forward(){
+            
+            return;
+        };
+        void set_reverse(){
+
+            return;
+        };
+    private:
+        int hello;
+};
+
+std::optional<ScanPoint> find_closest_point(const std::vector<ScanPoint> &scan, float max_dist_from_ldar, float maxClusterDistance){
+    double distance_array[scan.size()];
+    for(auto i = 0; i < scan.size(); i++){
+        if( scan[i].x != 0 && (scan[i].y) != 0 ) {
+            distance_array[i] = scan[i].dist(ScanPoint::zero());
+        }
+    }
+
+    int current_first = 0;
+    ScanPoint closest_scan ;
+    closest_scan.x = 1000;
+    bool is_last_a_zero = false;
+    int start = 0;
+    if(distance_array[0] != 0){
+        is_last_a_zero= true;
+    }
+    for(auto i = 1; i < scan.size(); i++){
+        // check if its a non zero
+        if(distance_array[i] != 0 && distance_array[i] < max_dist_from_ldar){
+            if(is_last_a_zero = true){
+                // set the begining of the cluster
+                current_first = i;
+                is_last_a_zero = false;
+            } else {
+                // check if this cluster is within size limits
+                if( scan[current_first].dist(scan[i]) > maxClusterDistance ){
+                    // check to see if this cluster has more than one point
+                    if( scan[i-1].dist(scan[i]) > maxClusterDistance ){
+                        // this is a new cluster. 
+                        // sets the pointer to the next non zero element. 
+                        current_first = i;
+                        // also ends this literation of the loop. 
+                    } else {
+                        // check the object
+                        // create a mid point from the past ones
+                        ScanPoint new_scan;
+                        new_scan.x = ( scan[current_first].x + scan[i].x ) / 2;
+                        new_scan.y = ( scan[current_first].y + scan[i].y ) / 2;
+
+                        // check is there is a closest point
+                        if( (closest_scan.x == 1000  ) ){
+                            // add this as the first closest point
+                            closest_scan.x = new_scan.x;
+                            closest_scan.y = new_scan.y;
+
+                            // check if this new point is closer than the last one
+                        } else if ( closest_scan.dist(ScanPoint::zero()) > new_scan.dist(ScanPoint::zero() ) ){
+                            // set to the new scan
+                            closest_scan.x = new_scan.x;
+                            closest_scan.y = new_scan.y;
+                        }
+                    }
+                }
+            }
+        // switch to if the element is zero
+        } else {
+            i--;
+            if (current_first = i) {continue; }
+            // check if this cluster is within size limits
+                if( scan[current_first].dist(scan[i]) > maxClusterDistance){
+                    // check to see if this cluster has more than one point
+                    if( (current_first + 1) == i){
+                        // fail this cluster and set i to the next point.
+                        // set the pointer to the next non zero element. 
+                        current_first = i;
+                    } else {
+                        // create a mid point from the past ones
+                        ScanPoint new_scan;
+                        new_scan.x = ( scan[current_first].x + scan[i].x ) / 2;
+                        new_scan.y = ( scan[current_first].y + scan[i].y ) / 2;
+
+                        // check is there is a closest point
+                        if( (closest_scan.x == 1000  ) ){
+                            // add this as the first closest point
+                            closest_scan.x = new_scan.x;
+                            closest_scan.y = new_scan.y;
+
+                            // check if this new point is closer than the last one
+                        } else if ( closest_scan.dist(ScanPoint::zero()) > new_scan.dist(ScanPoint::zero() ) ){
+                            // set to the new scan
+                            closest_scan.x = new_scan.x;
+                            closest_scan.y = new_scan.y;
+                        }
+                    }
+                }
+            i++;
+            is_last_a_zero = true;
+        }// end if chain
+    }// end loop
+    if(closest_scan.x == 1000){
+        return std::nullopt;
+    } else {
+        return closest_scan;
+    }
+    
+}// end fuction
+
+std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint8_t min_gap_size, float min_dist) {
+    // TODO
+    float rDist = 1;
+    float distance_array[scan.size()];
+    distance_array[0] = scan[0].dist(ScanPoint::zero());
+    auto closetPoint = -1;
+    auto closetPointDist = 10;
+
+    // find closest point
+    for(auto i = 1; i < scan.size(); i++){
+        distance_array[i] = scan[i].dist(ScanPoint::zero());
+        if( distance_array[i] !=0 && closetPointDist > distance_array[i]){
+            closetPoint = i;
+            closetPointDist = distance_array[i];
+        }
+    } 
+    // zero out other points
+    for(auto i = 0; i < scan.size(); i++){
+        /// if(closetPoint = i) continue;
+        if( scan[closetPoint].dist(scan[i]) < rDist ){
+            distance_array[i] = 0;
+        }
+    }
+
+    /// finding the gaps
+    /// the gap flag
+    bool is_a_gap = false;
+    int begin_of_cluster = 0;
+    int length_max_cluster = 0;
+    // need to inizate new scan;
+    ScanPoint scan_center_biggest_cluster;
+    if ( distance_array[0] != 0 ){
+        is_a_gap = true;
+    }
+    for(auto i = 0; i < scan.size(); i++){
+        if(distance_array[i] == 0){
+            if(is_a_gap){
+            /// check if the gap is bigger than the last one!
+                if ( (i - 1) - begin_of_cluster > length_max_cluster ){
+                    /// assgin as biggest
+                    length_max_cluster = ( i - 1) - begin_of_cluster;
+
+                }
+                is_a_gap = false;
+            }
+        } else {
+            is_a_gap = true;
+        }
+    }
+    /// TODO FINISH LOOPER
+    // find farest point
+    int farest_point = 0;
+    for(auto i = 1; i < scan.size(); i++ ){
+        if ( distance_array[farest_point] < distance_array[i]){
+            farest_point = i;
+        }
+    }
+    // check if farest point is zero
+    if( scan[farest_point].x <= 0 &&  scan[farest_point].y <= 0){
+        return std::nullopt;
+    }else {
+        return scan[farest_point];
+    }
+}
+
+void doTinyKartBrakingTrick(auto TinyKart, auto closestY){
+
+    tinyKart = TinyKart;
+    brakingPercentage = slopeBreaking * closestY + 1;
+                //logger.printf(" (%hi) \n", (int16_t) (closestY*1000) );
+
+                if(brakingPercentage > 1){
+                    brakingPercentage = 1;
+                }// end braking check
+
+                //logger.printf( "(%hi,%hi) \n", (int16_t) brakingPercentage*1000, (int16_t) (closestY * 1000 ) );
+
+                if(brakingPercentage > 0 && brakingPercentage < .20){
+                    //logger.printf("We are stopping");
+                    tinyKart->set_neutral();
+                    //estop();
+                } else  if ( brakingPercentage > 0){
+                    tinyKart->set_reverse(brakingPercentage * maxSpeed);
+                    //logger.printf("cart goes back\n");
+                    
+                } else {
+                    // manual trim, range (0,24)
+                    // positive is left
+                    tinyKart->set_forward(maxSpeed);
+                }// end forward/back code
+}
+
 void loop() {
+    tinyKart->set_steering(0);
     noInterrupts();
     auto res = ld06.get_scan();
     interrupts();
-
+    
     // Check if we have a scan frame
     if (res) {
+        
         auto scan_res = *res;
-
         // Check if frame erred
         if (scan_res) {
             auto maybe_scan = scan_builder.add_frame(scan_res.scan);
-
             // Check if we have a 180 degree scan built
             if (maybe_scan) {
                 auto scan = *maybe_scan;
+                
+        // run pio device monitor -b 115200
+        // online research ingores the fact that most of this is custom writtern
 
-                auto front_obj_dist = scan[scan.size() / 2].dist(ScanPoint::zero());
+        // start user code
 
-                // If object is 45cm in front of kart, stop (0.0 means bad point)
-                if (front_obj_dist != 0.0 && front_obj_dist < 0.45 + 0.1524) {
-                    logger.printf("Stopping because of object: %himm in front! \n", (int16_t) (front_obj_dist * 1000));
-                    tinyKart->pause();
-                    digitalWrite(LED_YELLOW, HIGH);
+        // the if (res) is returning false leading to the program to not work
+
+                float closestY = 1000;
+                
+
+                //ld06 is a 10 hertz device
+                double distance_array[scan.size()];
+                int i = 0;
+                for (auto &pt: scan) {
+                    if (pt.y == 0 && pt.x == 0) continue;
+                    //logger.printf("Point: (%hu,%hu)\n", (uint16_t) (pt.x * 1000), (uint16_t) (pt.y * 1000));
+                    // speed control
+                    if(closestY > pt.y && pt.y*1000 > 10){
+                        if(pt.x == 0){
+                            closestY = pt.y;
+                        } else if (pt.y/pt.x > 1.5 || pt.y/pt.x < -1.5 ){
+                            closestY = pt.y;
+                        }
+                    }
                 }
-
-                // Find target point
-                auto maybe_target_pt = gap_follow::find_gap_bubble(scan, 1.0);
-
-                if (maybe_target_pt) {
-                    auto target_pt = *maybe_target_pt;
-
-                    logger.printf("Target point: (%hi, %hi)\n", (int16_t) (target_pt.x * 1000),
-                                  (int16_t) (target_pt.y * 1000));
-
-                    // Find command to drive to point
-                    auto command = pure_pursuit::calculate_command_to_point(tinyKart, target_pt, 1.0);
-
-                    // Set throttle proportional to distance to point in front of kart
-                    command.throttle_percent = mapfloat(front_obj_dist, 0.1, 10.0, 0.15, tinyKart->get_speed_cap());
-
-                    logger.printf("Command: throttle %hu, angle %hi\n", (uint16_t) (command.throttle_percent * 100),
-                                  (int16_t) (command.steering_angle));
-
-                    // Actuate kart
-                    tinyKart->set_forward(command.throttle_percent);
+                auto target_pt = find_closest_point( scan, 4.0, 0.3040);
+                if( (target_pt.has_value()) ){
+                    auto command = pure_pursuit::calculate_command_to_point(tinyKart, target_pt.value(), 1.0);
                     tinyKart->set_steering(command.steering_angle);
+                    //logger.printf("%hi\n", (int32_t)(command.steering_angle * 1000));
+                    logger.printf( "(%hi, %hi)\n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000) );
+                    doTinyKartBrakingTrick(tinyKart, target_pt.value().y);
+
+                } else {
+                    logger.printf("steering 2.0 \n");
+                    tinyKart->set_steering(0.0);
+                    doTinyKartBrakingTrick(tinyKart, closestY);
                 }
+                
             }
         } else {
             switch (scan_res.error) {

@@ -2,6 +2,7 @@
 
 #include "cassert"
 #include "Arduino.h"
+#include "logger.hpp"
 
 /// Traxxas XL5 ESC control.
 ///
@@ -17,8 +18,12 @@ class ESC {
     int max_pwm_duty;
     /// Max PWM period in ms
     float period;
-    /// Tracks if we were moving forward, for clearing locks
     bool was_forward = false;
+    /// this will tell you if the cart was moving forward last call.
+    bool isForward = true;
+    double lastMillis = 0.0;
+    double currentSpeedForward = 0.13;
+    double accelBuy = .001;
 
 public:
     /// Initializes an ESC.
@@ -54,6 +59,19 @@ public:
     void set_forward(float power) {
         assert(power <= 1.0 && power >= 0.0);
 
+        if(this->was_forward = false){
+            this->currentSpeedForward = 0.14;
+            lastMillis = millis();
+        } else {
+            currentSpeedForward += accelBuy;
+        }
+        
+        if (currentSpeedForward > power){
+            logger.printf("MAXXX POWEEEEEEEEEEEEEERRRRRRRRRRRRRRRRRRRRRRR \n");
+        } else {
+            power = currentSpeedForward;
+        }
+
         this->was_forward = true;
 
         // Forward is 1.5-2.0ms periods
@@ -74,16 +92,17 @@ public:
     void set_reverse(float power) {
         assert(power <= 1.0 && power >= 0.0);
 
-        // Clear lockout
         if (this->was_forward) {
             this->set_reverse_raw(0.4);
             delay(uint16_t(period * 2));
 
+            // Clear lockout
             this->set_neutral();
             delay(uint16_t(period * 4));
+
             this->was_forward = false;
         }
-
+        
         this->set_reverse_raw(power);
     }
 };
