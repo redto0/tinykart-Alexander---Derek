@@ -238,7 +238,7 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
         scan_center_biggest_cluster.y = scan[begin_of_cluster].y + scan[ length_max_cluster ].y;
         scan_center_biggest_cluster.y = scan_center_biggest_cluster.y / 2;
 
-        logger.printf( " (%hi, %hi) ", (double) scan_center_biggest_cluster.x, (double) scan_center_biggest_cluster.y );
+        logger.printf( " (%hi, %hi) \n", (double) scan_center_biggest_cluster.x, (double) scan_center_biggest_cluster.y );
         return scan_center_biggest_cluster;
     }
 }
@@ -317,11 +317,11 @@ void loop() {
                     auto command = pure_pursuit::calculate_command_to_point(tinyKart, target_pt.value(), 1.0);
                     tinyKart->set_steering(command.steering_angle);
                     //logger.printf("%hi\n", (int32_t)(command.steering_angle * 1000));
-                    logger.printf( "(%hi, %hi)\n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000) );
+                    //logger.printf( "(%hi, %hi)\n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000) );
                     doTinyKartBrakingTrick(tinyKart, target_pt.value().y);
 
                 } else {
-                    logger.printf("steering 2.0 \n");
+                    //logger.printf("steering 2.0 \n");
                     tinyKart->set_steering(0.0);
                     doTinyKartBrakingTrick(tinyKart, closestY);
                 }
