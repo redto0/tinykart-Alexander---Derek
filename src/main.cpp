@@ -63,7 +63,7 @@ void setup() {
 
 /// 
 float maxSpeed = 0.25;
-float startBrakingDistance = 2.4;
+float startBrakingDistance = 2;
 bool isObjectInFornt = false;
 float brakingPercentage = -1;
 float slopeBreaking = 1 / (0.5 - startBrakingDistance);
@@ -179,7 +179,7 @@ std::optional<ScanPoint> find_closest_point(const std::vector<ScanPoint> &scan, 
     
 }// end fuction
 
-std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint8_t min_gap_size, float min_dist) {
+std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint8_t min_gap_size, float max_dist) {
     // TODO
     
     float rDist = 0.5;
@@ -195,12 +195,13 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
             closetPoint = i;
             closetPointDist = distance_array[i];
         }
+        /// if ( distance[i] > max_dist )
     } 
     // zero out other points
     for(auto i = 0; i < scan.size(); i++){
         /// if(closetPoint = i) continue;
         if( scan[closetPoint].dist(scan[i]) <= rDist ){
-            //distance_array[i] = 0;
+            distance_array[i] = 0;
         }
     }
 
@@ -243,32 +244,17 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
         return std::nullopt;
     } else {
         scan_center_biggest_cluster.x = scan[begin_of_cluster].x + scan[ length_max_cluster ].x;
-        scan_center_biggest_cluster.x = scan_center_biggest_cluster.x / 2;
+        scan_center_biggest_cluster.x = (scan_center_biggest_cluster.x ) / 2;
         scan_center_biggest_cluster.y = scan[begin_of_cluster].y + scan[ length_max_cluster ].y;
-        scan_center_biggest_cluster.y = scan_center_biggest_cluster.y / 2;
+        scan_center_biggest_cluster.y = (scan_center_biggest_cluster.y) / 2;
         
         logger.printf( " (%hi, %hi) \n", (int32_t)(scan_center_biggest_cluster.x *1000) , (int32_t)(scan_center_biggest_cluster.y *1000) );
         return scan_center_biggest_cluster;
     }
 }
 
-void doTinyKartBrakingTrick(auto TinyKart, const std::vector<ScanPoint> &scan){
-    float closestY = 1000;
-                double distance_array[scan.size()];
-                int i = 0;
-                for (auto &pt: scan) {
-                    if (pt.y == 0 && pt.x == 0) continue;
-                    //logger.printf("Point: (%hu,%hu)\n", (uint16_t) (pt.x * 1000), (uint16_t) (pt.y * 1000));
-                    // speed control
-                    if(closestY > pt.y && pt.y*1000 > 10){
-                        if(pt.x == 0){
-                            closestY = pt.y;
-                        } else if (pt.y/pt.x > 1.5 || pt.y/pt.x < -1.5 ){
-                            closestY = pt.y;
-                        }
-                    }
-                }
-    tinyKart = TinyKart;
+void doTinyKartBrakingTrick(auto TinyKart, float closestY){
+        // tinyKart = TinyKart;
     brakingPercentage = slopeBreaking * closestY + 1;
     //logger.printf(" (%hi) \n", (int16_t) (closestY*1000) );
 
@@ -293,6 +279,49 @@ void doTinyKartBrakingTrick(auto TinyKart, const std::vector<ScanPoint> &scan){
     }// end forward/back code
 }
 
+
+void doTinyKartBrakingTrick(auto TinyKart, const std::vector<ScanPoint> &scan){
+    float closestY = 1000;
+                double distance_array[scan.size()];
+                int i = 0;
+                for (auto &pt: scan) {
+                    if (pt.y == 0 && pt.x == 0) continue;
+                    //logger.printf("Point: (%hu,%hu)\n", (uint16_t) (pt.x * 1000), (uint16_t) (pt.y * 1000));
+                    // speed control
+                    if(closestY > pt.y && pt.y*1000 > 10){
+                        if(pt.x == 0){
+                            closestY = pt.y;
+                        } else if (pt.y/pt.x > 1.5 || pt.y/pt.x < -1.5 ){
+                            closestY = pt.y;
+                        }
+                    }
+                }
+    // tinyKart = TinyKart;
+    brakingPercentage = slopeBreaking * closestY + 1;
+    //logger.printf(" (%hi) \n", (int16_t) (closestY*1000) );
+
+    if(brakingPercentage > 1){
+        brakingPercentage = 1;
+    }// end braking check
+
+    //logger.printf( "(%hi,%hi) \n", (int16_t) brakingPercentage*1000, (int16_t) (closestY * 1000 ) );
+
+    if(brakingPercentage > 0 && brakingPercentage < .20){
+        //logger.printf("We are stopping");
+        tinyKart->set_neutral();
+        //estop();
+    } else  if ( brakingPercentage > 0){
+        tinyKart->set_reverse(brakingPercentage * maxSpeed);
+        //logger.printf("cart goes back\n");
+                    
+    } else {
+        // manual trim, range (0,24)
+        // positive is left
+        tinyKart->set_forward(maxSpeed);
+    }// end forward/back code
+}
+
+
 void loop() {
     tinyKart->set_steering(0);
     noInterrupts();
@@ -313,28 +342,13 @@ void loop() {
         // run pio device monitor -b 115200
         // online research ingores the fact that most of this is custom writtern
 
-                float closestY = 1000;
-                double distance_array[scan.size()];
-                int i = 0;
-                for (auto &pt: scan) {
-                    if (pt.y == 0 && pt.x == 0) continue;
-                    //logger.printf("Point: (%hu,%hu)\n", (uint16_t) (pt.x * 1000), (uint16_t) (pt.y * 1000));
-                    // speed control
-                    if(closestY > pt.y && pt.y*1000 > 10){
-                        if(pt.x == 0){
-                            closestY = pt.y;
-                        } else if (pt.y/pt.x > 1.5 || pt.y/pt.x < -1.5 ){
-                            closestY = pt.y;
-                        }
-                    }
-                }
-                auto target_pt = find_gap_naive( scan, 4.0, 0.3040);
+                auto target_pt = find_gap_naive( scan, 4.0, .5);
                 if( (target_pt.has_value()) ){
-                    auto command = pure_pursuit::calculate_command_to_point(tinyKart, target_pt.value(), 1.0);
+                    auto command = pure_pursuit::calculate_command_to_point(tinyKart, target_pt.value(), .5);
                     tinyKart->set_steering(command.steering_angle);
                     //logger.printf("%hi\n", (int32_t)(command.steering_angle * 1000));
                     //logger.printf( "(%hi, %hi)\n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000) );
-                    //doTinyKartBrakingTrick(tinyKart, scan);
+                    doTinyKartBrakingTrick(tinyKart, target_pt.value().y);
                     // tinyKart->set_forward(command.throttle_percent);
 
                 } else {

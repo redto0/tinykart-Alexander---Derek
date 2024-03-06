@@ -23,7 +23,7 @@ class ESC {
     bool isForward = true;
     double lastMillis = 0.0;
     double currentSpeedForward = 0.13;
-    double accelBuy = .001;
+    double accelBuy = .005;
 
 public:
     /// Initializes an ESC.
