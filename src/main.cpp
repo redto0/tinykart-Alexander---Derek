@@ -208,6 +208,7 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
     /// the gap flag
     bool is_a_gap = false;
     int begin_of_cluster = 0;
+    int begin_max_cluster = 0;
     int length_max_cluster = 0;
     // need to inizate new scan;
     ScanPoint scan_center_biggest_cluster{ 0, 0 };
@@ -215,21 +216,28 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
         is_a_gap = true;
     }
     for(auto i = 0; i < scan.size(); i++){
-        if(distance_array[i] = 0.0){
+        if(distance_array[i] == 0.0){
             if(is_a_gap){
             /// check if the gap is bigger than the last one!
                 if ( (i - 1) - begin_of_cluster > length_max_cluster ){
                     /// assgin as biggest
                     length_max_cluster = ( i - 1) - begin_of_cluster;
+                    begin_max_cluster = begin_of_cluster;
 
                 }
                 is_a_gap = false;
             }
-        } else {
+        } else if( (i - 1) == scan.size() && is_a_gap == true ){
+            // check if wall is legit
+            if ( (i ) - begin_of_cluster > length_max_cluster ){
+                begin_max_cluster = begin_of_cluster;
+                length_max_cluster = ( i ) - begin_of_cluster;
+            }
+        } else if ( is_a_gap == false ) {
+            begin_of_cluster = i;
             is_a_gap = true;
         }
     }
-    
     if( length_max_cluster == 0){
         logger.printf(" no target acquired \n");
         return std::nullopt;
@@ -326,13 +334,13 @@ void loop() {
                     tinyKart->set_steering(command.steering_angle);
                     //logger.printf("%hi\n", (int32_t)(command.steering_angle * 1000));
                     //logger.printf( "(%hi, %hi)\n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000) );
-                    doTinyKartBrakingTrick(tinyKart, scan);
+                    //doTinyKartBrakingTrick(tinyKart, scan);
                     // tinyKart->set_forward(command.throttle_percent);
 
                 } else {
                     //logger.printf("steering 2.0 \n");
                     // tinyKart->set_steering(0.0);
-                    doTinyKartBrakingTrick(tinyKart, scan);
+                   // doTinyKartBrakingTrick(tinyKart, scan);
                 }
                 
             }
