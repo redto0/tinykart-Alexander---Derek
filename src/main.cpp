@@ -181,7 +181,8 @@ std::optional<ScanPoint> find_closest_point(const std::vector<ScanPoint> &scan, 
 
 std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint8_t min_gap_size, float min_dist) {
     // TODO
-    float rDist = 1;
+    
+    float rDist = 0.5;
     float distance_array[scan.size()];
     distance_array[0] = scan[0].dist(ScanPoint::zero());
     auto closetPoint = -1;
@@ -198,8 +199,8 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
     // zero out other points
     for(auto i = 0; i < scan.size(); i++){
         /// if(closetPoint = i) continue;
-        if( scan[closetPoint].dist(scan[i]) < rDist ){
-            distance_array[i] = 0;
+        if( scan[closetPoint].dist(scan[i]) <= rDist ){
+            //distance_array[i] = 0;
         }
     }
 
@@ -214,7 +215,7 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
         is_a_gap = true;
     }
     for(auto i = 0; i < scan.size(); i++){
-        if(distance_array[i] == 0){
+        if(distance_array[i] = 0.0){
             if(is_a_gap){
             /// check if the gap is bigger than the last one!
                 if ( (i - 1) - begin_of_cluster > length_max_cluster ){
@@ -237,37 +238,51 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
         scan_center_biggest_cluster.x = scan_center_biggest_cluster.x / 2;
         scan_center_biggest_cluster.y = scan[begin_of_cluster].y + scan[ length_max_cluster ].y;
         scan_center_biggest_cluster.y = scan_center_biggest_cluster.y / 2;
-
-        logger.printf( " (%hi, %hi) \n", (double) scan_center_biggest_cluster.x, (double) scan_center_biggest_cluster.y );
+        
+        logger.printf( " (%hi, %hi) \n", (int32_t)(scan_center_biggest_cluster.x *1000) , (int32_t)(scan_center_biggest_cluster.y *1000) );
         return scan_center_biggest_cluster;
     }
 }
 
-void doTinyKartBrakingTrick(auto TinyKart, auto closestY){
-
+void doTinyKartBrakingTrick(auto TinyKart, const std::vector<ScanPoint> &scan){
+    float closestY = 1000;
+                double distance_array[scan.size()];
+                int i = 0;
+                for (auto &pt: scan) {
+                    if (pt.y == 0 && pt.x == 0) continue;
+                    //logger.printf("Point: (%hu,%hu)\n", (uint16_t) (pt.x * 1000), (uint16_t) (pt.y * 1000));
+                    // speed control
+                    if(closestY > pt.y && pt.y*1000 > 10){
+                        if(pt.x == 0){
+                            closestY = pt.y;
+                        } else if (pt.y/pt.x > 1.5 || pt.y/pt.x < -1.5 ){
+                            closestY = pt.y;
+                        }
+                    }
+                }
     tinyKart = TinyKart;
     brakingPercentage = slopeBreaking * closestY + 1;
-                //logger.printf(" (%hi) \n", (int16_t) (closestY*1000) );
+    //logger.printf(" (%hi) \n", (int16_t) (closestY*1000) );
 
-                if(brakingPercentage > 1){
-                    brakingPercentage = 1;
-                }// end braking check
+    if(brakingPercentage > 1){
+        brakingPercentage = 1;
+    }// end braking check
 
-                //logger.printf( "(%hi,%hi) \n", (int16_t) brakingPercentage*1000, (int16_t) (closestY * 1000 ) );
+    //logger.printf( "(%hi,%hi) \n", (int16_t) brakingPercentage*1000, (int16_t) (closestY * 1000 ) );
 
-                if(brakingPercentage > 0 && brakingPercentage < .20){
-                    //logger.printf("We are stopping");
-                    tinyKart->set_neutral();
-                    //estop();
-                } else  if ( brakingPercentage > 0){
-                    tinyKart->set_reverse(brakingPercentage * maxSpeed);
-                    //logger.printf("cart goes back\n");
+    if(brakingPercentage > 0 && brakingPercentage < .20){
+        //logger.printf("We are stopping");
+        tinyKart->set_neutral();
+        //estop();
+    } else  if ( brakingPercentage > 0){
+        tinyKart->set_reverse(brakingPercentage * maxSpeed);
+        //logger.printf("cart goes back\n");
                     
-                } else {
-                    // manual trim, range (0,24)
-                    // positive is left
-                    tinyKart->set_forward(maxSpeed);
-                }// end forward/back code
+    } else {
+        // manual trim, range (0,24)
+        // positive is left
+        tinyKart->set_forward(maxSpeed);
+    }// end forward/back code
 }
 
 void loop() {
@@ -290,14 +305,7 @@ void loop() {
         // run pio device monitor -b 115200
         // online research ingores the fact that most of this is custom writtern
 
-        // start user code
-
-        // the if (res) is returning false leading to the program to not work
-
                 float closestY = 1000;
-                
-
-                //ld06 is a 10 hertz device
                 double distance_array[scan.size()];
                 int i = 0;
                 for (auto &pt: scan) {
@@ -318,12 +326,13 @@ void loop() {
                     tinyKart->set_steering(command.steering_angle);
                     //logger.printf("%hi\n", (int32_t)(command.steering_angle * 1000));
                     //logger.printf( "(%hi, %hi)\n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000) );
-                    doTinyKartBrakingTrick(tinyKart, target_pt.value().y);
+                    doTinyKartBrakingTrick(tinyKart, scan);
+                    // tinyKart->set_forward(command.throttle_percent);
 
                 } else {
                     //logger.printf("steering 2.0 \n");
-                    tinyKart->set_steering(0.0);
-                    doTinyKartBrakingTrick(tinyKart, closestY);
+                    // tinyKart->set_steering(0.0);
+                    doTinyKartBrakingTrick(tinyKart, scan);
                 }
                 
             }

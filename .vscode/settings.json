@@ -1,5 +1,20 @@
 {
     "files.associations": {
-        "optional": "cpp"
+        "optional": "cpp",
+        "array": "cpp",
+        "deque": "cpp",
+        "string": "cpp",
+        "unordered_map": "cpp",
+        "vector": "cpp",
+        "exception": "cpp",
+        "iterator": "cpp",
+        "functional": "cpp",
+        "initializer_list": "cpp",
+        "iosfwd": "cpp",
+        "new": "cpp",
+        "stdexcept": "cpp",
+        "tuple": "cpp",
+        "type_traits": "cpp",
+        "utility": "cpp"
     }
 }
