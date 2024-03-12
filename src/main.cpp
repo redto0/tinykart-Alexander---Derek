@@ -248,7 +248,7 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
 
         } else if( (i - 1) == scan.size() && is_a_gap == true ){
             // check if wall is legit
-            if ( (i ) - begin_of_cluster > length_max_cluster ){
+            if ( i - begin_of_cluster > length_max_cluster && i - begin_of_cluster > 0 ){
                 begin_max_cluster = begin_of_cluster;
                 length_max_cluster = ( i ) - begin_of_cluster;
             }
