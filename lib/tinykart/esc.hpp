@@ -67,7 +67,7 @@ public:
         }
         
         if (currentSpeedForward > power){
-            logger.printf("MAXXX POWEEEEEEEEEEEEEERRRRRRRRRRRRRRRRRRRRRRR \n");
+            /// logger.printf("MAXXX POWEEEEEEEEEEEEEERRRRRRRRRRRRRRRRRRRRRRR \n");
         } else {
             power = currentSpeedForward;
         }

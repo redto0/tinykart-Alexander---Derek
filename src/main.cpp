@@ -62,8 +62,8 @@ void setup() {
 
 
 /// 
-float maxSpeed = 0.25;
-float startBrakingDistance = 2;
+float maxSpeed = 0.17;
+float startBrakingDistance = 1;
 bool isObjectInFornt = false;
 float brakingPercentage = -1;
 float slopeBreaking = 1 / (0.5 - startBrakingDistance);
@@ -191,6 +191,9 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
     // find closest point
     for(auto i = 1; i < scan.size(); i++){
         distance_array[i] = scan[i].dist(ScanPoint::zero());
+        if ( distance_array[i] > max_dist ){
+            distance_array[i] = 0;
+        }
         if( distance_array[i] !=0 && closetPointDist > distance_array[i]){
             closetPoint = i;
             closetPointDist = distance_array[i];
@@ -216,9 +219,10 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
     if ( distance_array[0] != 0 ){
         is_a_gap = true;
     }
+    int number_of_gaps = 0;
     for(auto i = 0; i < scan.size(); i++){
         if(distance_array[i] == 0.0){
-            if(is_a_gap){
+            if(is_a_gap == true ){
             /// check if the gap is bigger than the last one!
                 if ( (i - 1) - begin_of_cluster > length_max_cluster ){
                     /// assgin as biggest
@@ -228,6 +232,20 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
                 }
                 is_a_gap = false;
             }
+        } else if( is_a_gap ){
+            // check if the distance is too long
+            if( scan[i].dist(scan[i-1]) <  min_gap_size ){
+
+                if ( !( i - 1 == i) && (i - 1) - begin_of_cluster > length_max_cluster ){
+                    /// assgin as biggest
+                    length_max_cluster = ( i - 1) - begin_of_cluster;
+                    begin_max_cluster = begin_of_cluster;
+
+                }
+                is_a_gap = false;
+                
+            }
+
         } else if( (i - 1) == scan.size() && is_a_gap == true ){
             // check if wall is legit
             if ( (i ) - begin_of_cluster > length_max_cluster ){
@@ -237,18 +255,20 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
         } else if ( is_a_gap == false ) {
             begin_of_cluster = i;
             is_a_gap = true;
+            number_of_gaps++;
         }
     }
     if( length_max_cluster == 0){
         logger.printf(" no target acquired \n");
         return std::nullopt;
     } else {
-        scan_center_biggest_cluster.x = scan[begin_of_cluster].x + scan[ length_max_cluster ].x;
+        scan_center_biggest_cluster.x = scan[begin_max_cluster].x + scan[ length_max_cluster ].x;
         scan_center_biggest_cluster.x = (scan_center_biggest_cluster.x ) / 2;
-        scan_center_biggest_cluster.y = scan[begin_of_cluster].y + scan[ length_max_cluster ].y;
+        scan_center_biggest_cluster.y = scan[begin_max_cluster].y + scan[ length_max_cluster ].y;
         scan_center_biggest_cluster.y = (scan_center_biggest_cluster.y) / 2;
         
-        logger.printf( " (%hi, %hi) \n", (int32_t)(scan_center_biggest_cluster.x *1000) , (int32_t)(scan_center_biggest_cluster.y *1000) );
+        // logger.printf( " %hi \n", (int16_t) (number_of_gaps) );
+        // logger.printf( " (%hi, %hi) \n", (int32_t)(scan_center_biggest_cluster.x *1000) , (int32_t)(scan_center_biggest_cluster.y *1000) );
         return scan_center_biggest_cluster;
     }
 }
@@ -264,9 +284,11 @@ void doTinyKartBrakingTrick(auto TinyKart, float closestY){
 
     //logger.printf( "(%hi,%hi) \n", (int16_t) brakingPercentage*1000, (int16_t) (closestY * 1000 ) );
 
-    if(brakingPercentage > 0 && brakingPercentage < .20){
+    if(brakingPercentage > 0 && brakingPercentage < .50){
         //logger.printf("We are stopping");
         tinyKart->set_neutral();
+        tinyKart->set_forward(maxSpeed);
+
         //estop();
     } else  if ( brakingPercentage > 0){
         tinyKart->set_reverse(brakingPercentage * maxSpeed);
@@ -342,7 +364,19 @@ void loop() {
         // run pio device monitor -b 115200
         // online research ingores the fact that most of this is custom writtern
 
-                auto target_pt = find_gap_naive( scan, 4.0, .5);
+                auto target_pt = find_gap_naive( scan, .3, 5);
+
+                float distance_array[scan.size()];
+                for (auto i = 0; i < scan.size(); i++ ){
+                    distance_array[i] = scan[i].dist(ScanPoint::zero());
+                }
+                for (auto i = 0; i < scan.size(); i++ ){
+                    //logger.printf( (" (%hi, %hi)(%hi) "), (int16_t) (scan[i].x * 100), 
+                    //    (int16_t) (scan[i].x * 100), (int16_t) (distance_array[i] * 100)  );
+                }
+                /// logger.printf( " \n \n \n \n" );
+                
+
                 if( (target_pt.has_value()) ){
                     auto command = pure_pursuit::calculate_command_to_point(tinyKart, target_pt.value(), .5);
                     tinyKart->set_steering(command.steering_angle);

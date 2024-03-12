@@ -25,8 +25,8 @@ namespace pure_pursuit {
             target_point.x = new_x;
             target_point.y = new_y;
 
-            logger.printf("Capping to actual lookahead of: (%hi, %hi)\n", (int16_t) (target_point.x * 1000),
-                          (int16_t) (target_point.y * 1000));
+            //logger.printf("Capping to actual lookahead of: (%hi, %hi)\n", (int16_t) (target_point.x * 1000),
+            //              (int16_t) (target_point.y * 1000));
         }
 
         AckermannCommand command{};
