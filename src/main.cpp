@@ -234,7 +234,7 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
             }
         } else if( is_a_gap ){
             // check if the distance is too long
-            if( scan[i].dist(scan[i-1]) <  min_gap_size ){
+            if( scan[i].dist(scan[i-1]) >  min_gap_size ){
 
                 if ( !( i - 1 == i) && (i - 1) - begin_of_cluster > length_max_cluster ){
                     /// assgin as biggest
