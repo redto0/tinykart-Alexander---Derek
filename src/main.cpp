@@ -236,7 +236,7 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
             // check if the distance is too long
             if( scan[i].dist(scan[i-1]) >  min_gap_size ){
 
-                if ( !( i - 1 == i) && (i - 1) - begin_of_cluster > length_max_cluster ){
+                if ( !( i - 1 == begin_of_cluster) && (i - 1) - begin_of_cluster > length_max_cluster ){
                     /// assgin as biggest
                     length_max_cluster = ( i - 1) - begin_of_cluster;
                     begin_max_cluster = begin_of_cluster;
@@ -258,6 +258,7 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
             number_of_gaps++;
         }
     }
+    logger.printf("%hi \n", (int16_t)(number_of_gaps));
     if( length_max_cluster == 0){
         logger.printf(" no target acquired \n");
         return std::nullopt;
@@ -364,7 +365,7 @@ void loop() {
         // run pio device monitor -b 115200
         // online research ingores the fact that most of this is custom writtern
 
-                auto target_pt = find_gap_naive( scan, .3, 5);
+                auto target_pt = find_gap_naive( scan, 1.5, 10);
 
                 float distance_array[scan.size()];
                 for (auto i = 0; i < scan.size(); i++ ){
@@ -378,10 +379,12 @@ void loop() {
                 
 
                 if( (target_pt.has_value()) ){
-                    auto command = pure_pursuit::calculate_command_to_point(tinyKart, target_pt.value(), .5);
-                    tinyKart->set_steering(command.steering_angle);
+                    auto steering_angle = tan( target_pt.value().x / target_pt.value().y) *10;
+                    tinyKart->set_steering(steering_angle);
+                    /// auto command = pure_pursuit::calculate_command_to_point(tinyKart, target_pt.value(), .5);
+                    /// tinyKart->set_steering(command.steering_angle);
                     //logger.printf("%hi\n", (int32_t)(command.steering_angle * 1000));
-                    //logger.printf( "(%hi, %hi)\n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000) );
+                    logger.printf( "(%hi, %hi)\n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000) );
                     doTinyKartBrakingTrick(tinyKart, target_pt.value().y);
                     // tinyKart->set_forward(command.throttle_percent);
 
