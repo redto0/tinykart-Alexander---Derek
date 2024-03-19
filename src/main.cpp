@@ -385,7 +385,7 @@ void loop() {
                     logger.printf("steering %i\n", (int32_t)(command.steering_angle * 1000));
                     logger.printf( "(%i, %i)\n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000) );
                     /// doTinyKartBrakingTrick(tinyKart, target_pt.value().y);
-                    tinyKart->set_forward(0);
+                    tinyKart->set_forward(0.20);
                     // tinyKart->set_forward(command.throttle_percent);
 
                 } else {
