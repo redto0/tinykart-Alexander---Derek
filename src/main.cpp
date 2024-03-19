@@ -346,7 +346,6 @@ void doTinyKartBrakingTrick(auto TinyKart, const std::vector<ScanPoint> &scan){
 
 
 void loop() {
-    tinyKart->set_steering(0);
     noInterrupts();
     auto res = ld06.get_scan();
     interrupts();
@@ -379,13 +378,14 @@ void loop() {
                 
 
                 if( (target_pt.has_value()) ){
-                    auto steering_angle = tan( target_pt.value().x / target_pt.value().y) *10;
-                    tinyKart->set_steering(steering_angle);
-                    /// auto command = pure_pursuit::calculate_command_to_point(tinyKart, target_pt.value(), .5);
-                    /// tinyKart->set_steering(command.steering_angle);
-                    //logger.printf("%hi\n", (int32_t)(command.steering_angle * 1000));
-                    logger.printf( "(%hi, %hi)\n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000) );
-                    doTinyKartBrakingTrick(tinyKart, target_pt.value().y);
+                    /// auto steering_angle = tan( target_pt.value().x / target_pt.value().y) *10;
+                    /// tinyKart->set_steering(steering_angle);
+                    auto command = pure_pursuit::calculate_command_to_point(tinyKart, target_pt.value(), 5.0 );
+                    tinyKart->set_steering(command.steering_angle);
+                    logger.printf("steering %i\n", (int32_t)(command.steering_angle * 1000));
+                    logger.printf( "(%i, %i)\n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000) );
+                    /// doTinyKartBrakingTrick(tinyKart, target_pt.value().y);
+                    tinyKart->set_forward(0);
                     // tinyKart->set_forward(command.throttle_percent);
 
                 } else {
