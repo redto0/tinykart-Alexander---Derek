@@ -67,7 +67,9 @@ float startBrakingDistance = 12.686 * maxSpeed - 0.7757;
 bool isObjectInFornt = false;
 float brakingPercentage = -1;
 float slopeBreaking = 1 / (0.5 - startBrakingDistance);
-/// 1.268 * maxSpeed - 0.7757
+float max_braking_trick_angle = 20;
+// in degrees converting to rads
+float max_braking_angle_constant = atan(30 * 0.01745329);
 
 struct tinyKartMovement{
     public:
@@ -309,17 +311,17 @@ void doTinyKartBrakingTrick(auto TinyKart, const std::vector<ScanPoint> &scan, f
     double distance_array[scan.size()];
     int i = 0;
     for (auto &pt: scan) {
-        if (pt.y == 0 && pt.x == 0) continue;
         //logger.printf("Point: (%hu,%hu)\n", (uint16_t) (pt.x * 1000), (uint16_t) (pt.y * 1000));
         // speed control
-        if(closestY > pt.y && pt.y*1000 > 10){
+        if(closestY > pt.y && pt.y != 0){
             if(pt.x == 0){
                 closestY = pt.y;
-            } else if (pt.y/pt.x > 1.5 || pt.y/pt.x < -1.5 ){
+            } else if (pt.x/pt.y > max_braking_angle_constant || pt.x/pt.y < -max_braking_angle_constant ){
                 closestY = pt.y;
             }
         }
     }
+    logger.printf(" %hi \n", (int16_t) (closestY));
     brakingPercentage = slopeBreaking * closestY + 1;
 
     if(brakingPercentage > 1){
@@ -376,7 +378,7 @@ void loop() {
                     // tinyKart->set_steering(0.0);
                    // doTinyKartBrakingTrick(tinyKart, scan);
                 }
-                doTinyKartBrakingTrick(tinyKart, scan, 2.0);
+                doTinyKartBrakingTrick(tinyKart, scan, .20);
                 
             }
         } else {
