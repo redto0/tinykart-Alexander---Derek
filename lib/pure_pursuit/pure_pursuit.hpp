@@ -36,7 +36,7 @@ namespace pure_pursuit {
 
         // Set the desired steering angle and set it to the ackerman command
         float steering_angle = atanf(
-                2.0f * tinyKart->get_wheelbase() * sinf(alpha) / target_point.dist(ScanPoint::zero()));
+                2.0 * tinyKart->get_wheelbase() * sinf(alpha) / target_point.dist(ScanPoint::zero()));
 
         // Convert from rad to deg
         steering_angle = steering_angle * 180.0f / float(M_PI);
