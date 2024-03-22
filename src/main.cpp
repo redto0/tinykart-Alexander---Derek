@@ -64,7 +64,6 @@ void setup() {
 
 float maxSpeed = 0.17;
 float startBrakingDistance = 12.686 * maxSpeed - 0.7757;
-bool isObjectInFornt = false;
 float brakingPercentage = -1;
 float slopeBreaking = 1 / (0.5 - startBrakingDistance);
 float max_braking_trick_angle = 20;
