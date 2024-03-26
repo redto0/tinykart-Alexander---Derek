@@ -26,7 +26,10 @@ void estop() {
     logger.printf("Toggle Pause\n");
 
     tinyKart->toggle_pause();
-    
+    if (true){
+        tinyKart->set_neutral();
+        tinyKart->set_steering(0.0);
+    }
     digitalToggle(LED_YELLOW);
 }
 
