@@ -26,6 +26,7 @@ void estop() {
     logger.printf("Toggle Pause\n");
 
     tinyKart->toggle_pause();
+    
     digitalToggle(LED_YELLOW);
 }
 
@@ -263,7 +264,6 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
 }
 
 void doTinyKartBrakingTrick(auto TinyKart, float closestY){
-        // tinyKart = TinyKart;
     brakingPercentage = slopeBreaking * closestY + 1;
     //logger.printf(" (%hi) \n", (int16_t) (closestY*1000) );
 
@@ -291,8 +291,9 @@ void doTinyKartBrakingTrick(auto TinyKart, float closestY){
 }
 
 
-void doTinyKartBrakingTrick(auto TinyKart, const std::vector<ScanPoint> &scan, float netural_zone){
+void doTinyKartBrakingTrick(auto TinyKart, const std::vector<ScanPoint> &scan, float netural_zone, int angle){
     float closestY = 1000;
+    float angle_constant = atan(angle * 0.01745329);
     double distance_array[scan.size()];
     int i = 0;
     for (auto &pt: scan) {
@@ -301,7 +302,7 @@ void doTinyKartBrakingTrick(auto TinyKart, const std::vector<ScanPoint> &scan, f
         if(closestY > pt.y && pt.y != 0){
             if(pt.x == 0){
                 closestY = pt.y;
-            } else if (pt.x/pt.y > max_braking_angle_constant || pt.x/pt.y < -max_braking_angle_constant ){
+            } else if (pt.x/pt.y > angle_constant || pt.x/pt.y < -angle_constant ){
                 closestY = pt.y;
             }
         }
@@ -363,7 +364,7 @@ void loop() {
                     // tinyKart->set_steering(0.0);
                    // doTinyKartBrakingTrick(tinyKart, scan);
                 }
-                doTinyKartBrakingTrick(tinyKart, scan, .20);
+                doTinyKartBrakingTrick(tinyKart, scan, .20, 30);
                 
             }
         } else {
