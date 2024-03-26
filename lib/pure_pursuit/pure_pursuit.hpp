@@ -45,6 +45,7 @@ namespace pure_pursuit {
         steering_angle = std::clamp(steering_angle, -tinyKart->get_max_steering(), tinyKart->get_max_steering());
         command.steering_angle = steering_angle;
 
+<<<<<<< Updated upstream
         //JANK
         if(command.steering_angle > 0 && target_point.x < 0){
             command.steering_angle = command.steering_angle * -1;
@@ -52,6 +53,8 @@ namespace pure_pursuit {
         //JANK
 
 
+=======
+>>>>>>> Stashed changes
         // Set speed proportional to angle
         float set_speed = 1.0f - (abs(steering_angle) / tinyKart->get_max_steering());
         command.throttle_percent = std::clamp(set_speed, 0.2f, 1.0f);
