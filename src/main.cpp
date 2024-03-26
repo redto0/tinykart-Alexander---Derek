@@ -356,7 +356,7 @@ void loop() {
              // run pio device monitor -b 115200
              // online research ingores the fact that most of this is custom writtern
 
-                auto target_pt = find_gap_naive( scan, 1.5, 10);
+                auto target_pt = find_gap_naive( scan, 1, 10000);
                 
                 
                 if( (target_pt.has_value()) ){
@@ -365,7 +365,9 @@ void loop() {
                     auto command = pure_pursuit::calculate_command_to_point ( tinyKart, target_pt.value(), 5.0 );
                     tinyKart->set_steering(command.steering_angle);
                     /// logger.printf("steering %i\n", (int32_t)(command.steering_angle * 1000));
-                    logger.printf( "(%i, %i)\n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000) );
+                    logger.printf( "(%i x, %i y) ang %i \n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000), 
+                    (int32_t) (command.steering_angle * 10) );
+                    
                     /// doTinyKartBrakingTrick(tinyKart, target_pt.value().y);
                     // tinyKart->set_forward(0.20);
                     // tinyKart->set_forward(command.throttle_percent);
@@ -373,11 +375,13 @@ void loop() {
                     tinyKart->set_forward(0.14);
                     digitalWrite(LED_RED, HIGH);
                 } else {
+
                     //logger.printf("steering 0.0 \n");
                     // tinyKart->set_steering(0.0);
                    // doTinyKartBrakingTrick(tinyKart, scan);
                     tinyKart->set_steering(0.0);
-                    doTinyKartBrakingTrick(tinyKart, scan, .20, 15);
+                    tinyKart->set_forward(0.13);
+                    /// doTinyKartBrakingTrick(tinyKart, scan, .20, 15);
                     digitalWrite(LED_RED, LOW);
                 }
             }
