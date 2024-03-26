@@ -46,9 +46,6 @@ namespace pure_pursuit {
         command.steering_angle = steering_angle;
 
         //JANK
-        if(command.steering_angle > 0 && target_point.x < 0){
-            command.steering_angle = command.steering_angle * -1;
-        }
         //JANK
 
 
