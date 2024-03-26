@@ -53,7 +53,7 @@ void setup() {
     // Prepare kart for motion
     ESC esc{THROTTLE_PIN, PWM_MAX_DUTY, PWM_FREQ};
     // max third para is 0.3, range >1.6
-    tinyKart = new TinyKart{STEERING_PIN, esc, 0.3, 4.5};
+    tinyKart = new TinyKart{STEERING_PIN, esc, 0.3, 4.0};
     // Init DMA and UART for LiDAR
     dmaSerialRx5.begin(230'400, [&](volatile LD06Buffer buffer) {
         // On each packet received, copy over to driver.
@@ -73,12 +73,30 @@ float slopeBreaking = 1 / (0.5 - startBrakingDistance);
 float max_braking_trick_angle = 20;
 // in degrees converting to rads
 float max_braking_angle_constant = tan(30 * 0.01745329);
-
-/*
-std::optional<float> pure_pursuit( auto tinyKart, const std::vector<ScanPoint> &scan, float hello ){
-    
+float clamp(float value, int min_value, int max_value) {
+    return std::max(static_cast<float>(min_value), std::min(value, static_cast<float>(max_value)));
 }
-*/
+
+float pure_pursuit_but_cooler( auto tinyKart, const ScanPoint &scan, float hello ){
+    auto x = scan.x;
+    auto y = scan.y; 
+    /* auto normalizer = sqrt( x * x + y * y);
+    if ( y > abs ( x ) ) {
+        normalizer = y;
+    } else { 
+        normalizer = abs( x );
+    }
+    x = x / normalizer;
+    y = y / normalizer; */
+    // the angle between (0,1) and (x,y) in degrees
+    float ans = acosf( ( y ) / ( sqrtf( x * x + y * y ) ) ) * 57.2957795;
+    /// ans = clamp( ans, -45, 45);
+    if ( x < 0 && ans > 0 ){
+        ans = ans * -1;
+    }
+    return ans;
+}
+
 std::optional<ScanPoint> find_closest_point(const std::vector<ScanPoint> &scan, float max_dist_from_ldar, float maxClusterDistance){
     double distance_array[scan.size()];
     for(auto i = 0; i < scan.size(); i++){
@@ -176,10 +194,10 @@ std::optional<ScanPoint> find_closest_point(const std::vector<ScanPoint> &scan, 
     
 }// end fuction
 
-std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint8_t min_gap_size, float max_dist) {
+std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint8_t min_gap_size, float max_dist, float rDist) {
     // TODO
     
-    float rDist = 0.5;
+    /// float rDist = 0.5;
     float distance_array[scan.size()];
     distance_array[0] = scan[0].dist(ScanPoint::zero());
     auto closetPoint = -1;
@@ -191,7 +209,7 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
         if ( distance_array[i] > max_dist ){
             distance_array[i] = 0;
         }
-        if( distance_array[i] != 0 && closetPointDist > distance_array[i]){
+        if( distance_array[i] > 0 && closetPointDist > distance_array[i]){
             closetPoint = i;
             closetPointDist = distance_array[i];
         }
@@ -201,13 +219,12 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
     if ( !(closetPoint == -1) ){ 
 
         for(auto i = 0; i < scan.size(); i++){
-            if(closetPoint == i) {
-                distance_array[i] = 0;
-            } else if( scan[closetPoint].dist(scan[i]) <= rDist ){
+            if( scan[closetPoint].dist(scan[i]) <= rDist ){
                 distance_array[i] = 0;
             }
         }
     }
+    distance_array[closetPoint] = 0;
     /// finding the gaps
     /// the gap flag
     bool is_a_gap = false;
@@ -356,17 +373,19 @@ void loop() {
              // run pio device monitor -b 115200
              // online research ingores the fact that most of this is custom writtern
 
-                auto target_pt = find_gap_naive( scan, 1, 10000);
+                auto target_pt = find_gap_naive( scan, 1.5, 10, 0.5);
                 
                 
                 if( (target_pt.has_value()) ){
                     /// auto steering_angle = tan( target_pt.value().x / target_pt.value().y) *10;
                     /// tinyKart->set_steering(steering_angle);
-                    auto command = pure_pursuit::calculate_command_to_point ( tinyKart, target_pt.value(), 5.0 );
-                    tinyKart->set_steering(command.steering_angle);
+                    auto steering_angle = pure_pursuit_but_cooler(tinyKart, target_pt.value(), 0);
+                    // auto command = pure_pursuit::calculate_command_to_point ( tinyKart, target_pt.value(), 5.0 );
+                    // tinyKart->set_steering(command.steering_angle);
+                    tinyKart->set_steering(steering_angle);
                     /// logger.printf("steering %i\n", (int32_t)(command.steering_angle * 1000));
                     logger.printf( "(%i x, %i y) ang %i \n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000), 
-                    (int32_t) (command.steering_angle * 10) );
+                    (int32_t) (steering_angle * 10 ) );
                     
                     /// doTinyKartBrakingTrick(tinyKart, target_pt.value().y);
                     // tinyKart->set_forward(0.20);
@@ -379,8 +398,8 @@ void loop() {
                     //logger.printf("steering 0.0 \n");
                     // tinyKart->set_steering(0.0);
                    // doTinyKartBrakingTrick(tinyKart, scan);
-                    tinyKart->set_steering(0.0);
-                    tinyKart->set_forward(0.13);
+                    // tinyKart->set_steering(0.0);
+                    tinyKart->set_forward(0.14);
                     /// doTinyKartBrakingTrick(tinyKart, scan, .20, 15);
                     digitalWrite(LED_RED, LOW);
                 }
