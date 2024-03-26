@@ -72,8 +72,13 @@ float brakingPercentage = -1;
 float slopeBreaking = 1 / (0.5 - startBrakingDistance);
 float max_braking_trick_angle = 20;
 // in degrees converting to rads
-float max_braking_angle_constant = atan(30 * 0.01745329);
+float max_braking_angle_constant = tan(30 * 0.01745329);
 
+/*
+std::optional<float> pure_pursuit( auto tinyKart, const std::vector<ScanPoint> &scan, float hello ){
+    
+}
+*/
 std::optional<ScanPoint> find_closest_point(const std::vector<ScanPoint> &scan, float max_dist_from_ldar, float maxClusterDistance){
     double distance_array[scan.size()];
     for(auto i = 0; i < scan.size(); i++){
@@ -92,14 +97,14 @@ std::optional<ScanPoint> find_closest_point(const std::vector<ScanPoint> &scan, 
     }
     for(auto i = 1; i < scan.size(); i++){
         // check if its a non zero
-        if(distance_array[i] != 0 && distance_array[i] < max_dist_from_ldar){
+        if(distance_array[i] != 0 && distance_array[i] < max_dist_from_ldar) {
             if(is_last_a_zero = true){
                 // set the begining of the cluster
                 current_first = i;
                 is_last_a_zero = false;
             } else {
                 // check if this cluster is within size limits
-                if( scan[current_first].dist(scan[i]) > maxClusterDistance ){
+                if( scan[current_first].dist(scan[i]) > maxClusterDistance ) {
                     // check to see if this cluster has more than one point
                     if( scan[i-1].dist(scan[i]) > maxClusterDistance ){
                         // this is a new cluster. 
@@ -114,7 +119,7 @@ std::optional<ScanPoint> find_closest_point(const std::vector<ScanPoint> &scan, 
                         new_scan.y = ( scan[current_first].y + scan[i].y ) / 2;
 
                         // check is there is a closest point
-                        if( (closest_scan.x == 1000  ) ){
+                        if( (closest_scan.x == 1000  ) ) {
                             // add this as the first closest point
                             closest_scan.x = new_scan.x;
                             closest_scan.y = new_scan.y;
@@ -253,7 +258,7 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
             number_of_gaps++;
         }
     }
-    logger.printf("%hi \n", (int16_t)(number_of_gaps));
+    /// logger.printf("%hi \n", (int16_t)(number_of_gaps));
     if( length_max_cluster == 0){
         logger.printf(" no target acquired \n");
         return std::nullopt;
@@ -271,7 +276,6 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
 
 void doTinyKartBrakingTrick(auto TinyKart, float closestY){
     brakingPercentage = slopeBreaking * closestY + 1;
-    //logger.printf(" (%hi) \n", (int16_t) (closestY*1000) );
 
     if(brakingPercentage > 1){
         brakingPercentage = 1;
@@ -299,13 +303,18 @@ void doTinyKartBrakingTrick(auto TinyKart, float closestY){
 
 void doTinyKartBrakingTrick(auto TinyKart, const std::vector<ScanPoint> &scan, float netural_zone, int angle){
     float closestY = 1000;
+<<<<<<< Updated upstream
     float angle_constant = atan(angle * 0.01745329); // covert to radians
+=======
+    double angle_constant = tan(angle * 0.01745329);
+    logger.printf(" %i \n", (int16_t) (( angle_constant * 1000) ));
+>>>>>>> Stashed changes
     double distance_array[scan.size()];
     int i = 0;
     for (auto &pt: scan) {
         //logger.printf("Point: (%hu,%hu)\n", (uint16_t) (pt.x * 1000), (uint16_t) (pt.y * 1000));
         // speed control
-        if(closestY > pt.y && pt.y != 0){
+        if(closestY > pt.y && !(pt.y == 0) ){
             if(pt.x == 0){
                 closestY = pt.y;
             } else if (pt.y/pt.x > angle_constant || pt.y/pt.x < -angle_constant ){
@@ -313,7 +322,7 @@ void doTinyKartBrakingTrick(auto TinyKart, const std::vector<ScanPoint> &scan, f
             }
         }
     }
-    logger.printf(" %hi \n", (int16_t) (closestY));
+    ///logger.printf(" %hi \n", (int16_t) (closestY * 1000));
     brakingPercentage = slopeBreaking * closestY + 1;
 
     if(brakingPercentage > 1){
@@ -348,8 +357,8 @@ void loop() {
             if (maybe_scan) {
                 auto scan = *maybe_scan;
                 
-        // run pio device monitor -b 115200
-        // online research ingores the fact that most of this is custom writtern
+             // run pio device monitor -b 115200
+             // online research ingores the fact that most of this is custom writtern
 
                 auto target_pt = find_gap_naive( scan, 1.5, 10);
                 
@@ -357,10 +366,10 @@ void loop() {
                 if( (target_pt.has_value()) ){
                     /// auto steering_angle = tan( target_pt.value().x / target_pt.value().y) *10;
                     /// tinyKart->set_steering(steering_angle);
-                    auto command = pure_pursuit::calculate_command_to_point(tinyKart, target_pt.value(), 5.0 );
+                    auto command = pure_pursuit::calculate_command_to_point ( tinyKart, target_pt.value(), 5.0 );
                     tinyKart->set_steering(command.steering_angle);
-                    logger.printf("steering %i\n", (int32_t)(command.steering_angle * 1000));
-                    logger.printf( "(%i, %i)\n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000) );
+                    /// logger.printf("steering %i\n", (int32_t)(command.steering_angle * 1000));
+                    /// logger.printf( "(%i, %i)\n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000) );
                     /// doTinyKartBrakingTrick(tinyKart, target_pt.value().y);
                     // tinyKart->set_forward(0.20);
                     // tinyKart->set_forward(command.throttle_percent);
@@ -370,7 +379,7 @@ void loop() {
                     // tinyKart->set_steering(0.0);
                    // doTinyKartBrakingTrick(tinyKart, scan);
                 }
-                doTinyKartBrakingTrick(tinyKart, scan, .20, 30);
+                doTinyKartBrakingTrick(tinyKart, scan, .20, 45);
                 
             }
         } else {
