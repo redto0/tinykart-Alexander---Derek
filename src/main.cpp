@@ -299,7 +299,7 @@ void doTinyKartBrakingTrick(auto TinyKart, float closestY){
 
 void doTinyKartBrakingTrick(auto TinyKart, const std::vector<ScanPoint> &scan, float netural_zone, int angle){
     float closestY = 1000;
-    float angle_constant = atan(angle * 0.01745329);
+    float angle_constant = atan(angle * 0.01745329); // covert to radians
     double distance_array[scan.size()];
     int i = 0;
     for (auto &pt: scan) {

@@ -76,7 +76,11 @@ public:
     ///
     /// Positive angles are to the left, negative is to the right. All angles are in degrees.
     void set_steering(float angle) {
-        
+        if (this->estopped) {
+            this->set_steering(0);
+            return;
+            //stage a change
+        }
 
         // Max steering is 24 degrees, map to servo 0-180 degrees
         auto servo_angle = mapfloat(angle + steering_bias, -get_max_steering(), get_max_steering(), 199, 0);
