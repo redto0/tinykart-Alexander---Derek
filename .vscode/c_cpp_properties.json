@@ -99,7 +99,7 @@
                 ]
             },
             "defines": [
-                "PLATFORMIO=60113",
+                "PLATFORMIO=60114",
                 "STM32H7xx",
                 "STM32H723xx",
                 "ENABLE_HWSERIAL5",

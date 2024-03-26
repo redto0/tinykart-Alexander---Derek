@@ -66,7 +66,7 @@ void setup() {
 
 
 
-float maxSpeed = 0.0;
+float maxSpeed = 0.20;
 float startBrakingDistance = 12.686 * maxSpeed - 0.7757;
 float brakingPercentage = -1;
 float slopeBreaking = 1 / (0.5 - startBrakingDistance);
@@ -181,12 +181,12 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
     auto closetPointDist = 10;
 
     // find closest point
-    for(auto i = 1; i < scan.size(); i++){
+    for(int i = 1; i < scan.size(); i++){
         distance_array[i] = scan[i].dist(ScanPoint::zero());
         if ( distance_array[i] > max_dist ){
             distance_array[i] = 0;
         }
-        if( distance_array[i] !=0 && closetPointDist > distance_array[i]){
+        if( distance_array[i] != 0 && closetPointDist > distance_array[i]){
             closetPoint = i;
             closetPointDist = distance_array[i];
         }
@@ -308,7 +308,7 @@ void doTinyKartBrakingTrick(auto TinyKart, const std::vector<ScanPoint> &scan, f
         if(closestY > pt.y && pt.y != 0){
             if(pt.x == 0){
                 closestY = pt.y;
-            } else if (pt.x/pt.y > angle_constant || pt.x/pt.y < -angle_constant ){
+            } else if (pt.y/pt.x > angle_constant || pt.y/pt.x < -angle_constant ){
                 closestY = pt.y;
             }
         }
