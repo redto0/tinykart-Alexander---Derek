@@ -66,7 +66,7 @@ void setup() {
 
 
 
-float maxSpeed = 0.17;
+float maxSpeed = 0.0;
 float startBrakingDistance = 12.686 * maxSpeed - 0.7757;
 float brakingPercentage = -1;
 float slopeBreaking = 1 / (0.5 - startBrakingDistance);
@@ -193,20 +193,23 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
         /// if ( distance[i] > max_dist )
     } 
     // zero out other points
-    for(auto i = 0; i < scan.size(); i++){
-        /// if(closetPoint = i) continue;
-        if( scan[closetPoint].dist(scan[i]) <= rDist ){
-            distance_array[i] = 0;
+    if ( !(closetPoint == -1) ){ 
+
+        for(auto i = 0; i < scan.size(); i++){
+            if(closetPoint == i) {
+                distance_array[i] = 0;
+            } else if( scan[closetPoint].dist(scan[i]) <= rDist ){
+                distance_array[i] = 0;
+            }
         }
     }
-
     /// finding the gaps
     /// the gap flag
     bool is_a_gap = false;
     int begin_of_cluster = 0;
     int begin_max_cluster = 0;
     int length_max_cluster = 0;
-    // need to inizate new scan;
+    // need to inizate new scanPoint;
     ScanPoint scan_center_biggest_cluster{ 0, 0 };
     if ( distance_array[0] != 0 ){
         is_a_gap = true;
@@ -363,7 +366,7 @@ void loop() {
                     // tinyKart->set_forward(command.throttle_percent);
 
                 } else {
-                    //logger.printf("steering 2.0 \n");
+                    //logger.printf("steering 0.0 \n");
                     // tinyKart->set_steering(0.0);
                    // doTinyKartBrakingTrick(tinyKart, scan);
                 }
