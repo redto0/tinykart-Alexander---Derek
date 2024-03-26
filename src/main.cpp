@@ -286,7 +286,7 @@ void doTinyKartBrakingTrick(auto TinyKart, float closestY){
     if(brakingPercentage > 0 && brakingPercentage < .50){
         //logger.printf("We are stopping");
         tinyKart->set_neutral();
-        tinyKart->set_forward(maxSpeed);
+        /// tinyKart->set_forward(maxSpeed);
 
         //estop();
     } else  if ( brakingPercentage > 0){
@@ -303,18 +303,15 @@ void doTinyKartBrakingTrick(auto TinyKart, float closestY){
 
 void doTinyKartBrakingTrick(auto TinyKart, const std::vector<ScanPoint> &scan, float netural_zone, int angle){
     float closestY = 1000;
-<<<<<<< Updated upstream
-    float angle_constant = atan(angle * 0.01745329); // covert to radians
-=======
+
     double angle_constant = tan(angle * 0.01745329);
     logger.printf(" %i \n", (int16_t) (( angle_constant * 1000) ));
->>>>>>> Stashed changes
     double distance_array[scan.size()];
     int i = 0;
     for (auto &pt: scan) {
         //logger.printf("Point: (%hu,%hu)\n", (uint16_t) (pt.x * 1000), (uint16_t) (pt.y * 1000));
         // speed control
-        if(closestY > pt.y && !(pt.y == 0) ){
+        if(closestY > pt.y && (pt.y > 0.001) ){
             if(pt.x == 0){
                 closestY = pt.y;
             } else if (pt.y/pt.x > angle_constant || pt.y/pt.x < -angle_constant ){
