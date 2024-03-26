@@ -70,20 +70,6 @@ float max_braking_trick_angle = 20;
 // in degrees converting to rads
 float max_braking_angle_constant = atan(30 * 0.01745329);
 
-struct tinyKartMovement{
-    public:
-        void set_forward(){
-            
-            return;
-        };
-        void set_reverse(){
-
-            return;
-        };
-    private:
-        int hello;
-};
-
 std::optional<ScanPoint> find_closest_point(const std::vector<ScanPoint> &scan, float max_dist_from_ldar, float maxClusterDistance){
     double distance_array[scan.size()];
     for(auto i = 0; i < scan.size(); i++){
