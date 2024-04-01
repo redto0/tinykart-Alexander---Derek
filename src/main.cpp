@@ -89,7 +89,7 @@ float pure_pursuit_but_cooler( auto tinyKart, const ScanPoint &scan, float hello
     x = x / normalizer;
     y = y / normalizer; */
     // the angle between (0,1) and (x,y) in degrees
-    float ans = acosf( ( y ) / ( sqrtf( x * x + y * y ) ) ) * 57.2957795;
+    float ans = asinf( ( sqrtf( x * x + y * y ) ) ) * 57.2957795;
     /// ans = clamp( ans, -45, 45);
     if ( x < 0 && ans > 0 ){
         ans = ans * -1;

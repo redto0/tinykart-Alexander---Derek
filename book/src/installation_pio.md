@@ -33,7 +33,8 @@ select `src/main.cpp`:
 
 <img src="assets/pio%20new%20project.png"/>
 
-As you can see, the IDE has generated a same Arduino program, which should look quite familiar to anyone who has used
+As you can see, the IDE has generated a same Arduino program, whi
+ch should look quite familiar to anyone who has used
 the
 Arduino IDE before.
 
