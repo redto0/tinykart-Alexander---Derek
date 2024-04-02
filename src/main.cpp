@@ -273,11 +273,16 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
         logger.printf(" no target acquired \n");
         return std::nullopt;
     } else {
+        if (scan[begin_max_cluster].dist( ScanPoint::zero() ) > scan[ length_max_cluster ].dist( ScanPoint::zero() ) ){
+            scan_center_biggest_cluster. x = scan[ begin_max_cluster ].x ;
+            scan_center_biggest_cluster. y = scan[ begin_max_cluster ].y ;
+        }
+        /*
         scan_center_biggest_cluster.x = scan[begin_max_cluster].x + scan[ length_max_cluster ].x;
         scan_center_biggest_cluster.x = (scan_center_biggest_cluster.x ) / 2;
         scan_center_biggest_cluster.y = scan[begin_max_cluster].y + scan[ length_max_cluster ].y;
         scan_center_biggest_cluster.y = (scan_center_biggest_cluster.y) / 2;
-        
+        */
         // logger.printf( " %hi \n", (int16_t) (number_of_gaps) );
         // logger.printf( " (%hi, %hi) \n", (int32_t)(scan_center_biggest_cluster.x *1000) , (int32_t)(scan_center_biggest_cluster.y *1000) );
         return scan_center_biggest_cluster;
@@ -351,6 +356,8 @@ void loop() {
     noInterrupts();
     auto res = ld06.get_scan();
     interrupts();
+    digitalWrite(LED_RED, LOW);
+
     
     // Check if we have a scan frame
     if (res) {
@@ -370,30 +377,19 @@ void loop() {
                 
                 
                 if( (target_pt.has_value()) ){
-                    /// auto steering_angle = tan( target_pt.value().x / target_pt.value().y) *10;
-                    /// tinyKart->set_steering(steering_angle);
                     auto steering_angle = pure_pursuit_but_cooler(tinyKart, target_pt.value(), 0);
-                    // auto command = pure_pursuit::calculate_command_to_point ( tinyKart, target_pt.value(), 5.0 );
-                    // tinyKart->set_steering(command.steering_angle);
                     tinyKart->set_steering(steering_angle);
-                    /// logger.printf("steering %i\n", (int32_t)(command.steering_angle * 1000));
                     logger.printf( "(%i x, %i y) ang %i \n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000), 
                     (int32_t) (steering_angle * 10 ) );
-                    
-                    /// doTinyKartBrakingTrick(tinyKart, target_pt.value().y);
-                    // tinyKart->set_forward(0.20);
-                    // tinyKart->set_forward(command.throttle_percent);
-                    /// doTinyKartBrakingTrick(tinyKart, target_pt.value().y);
-                    tinyKart->set_forward(0.14);
+
+                    tinyKart->set_forward(0.16);
                     digitalWrite(LED_RED, HIGH);
                 } else {
 
-                    //logger.printf("steering 0.0 \n");
-                    // tinyKart->set_steering(0.0);
-                   // doTinyKartBrakingTrick(tinyKart, scan);
-                    // tinyKart->set_steering(0.0);
-                    tinyKart->set_forward(0.14);
-                    /// doTinyKartBrakingTrick(tinyKart, scan, .20, 15);
+                    tinyKart->set_forward(0.16);
+                    tinyKart->set_steering(0.0);
+                    doTinyKartBrakingTrick(tinyKart, scan, 0, 45);
+                    tinyKart->set_reverse(0.16);
                     digitalWrite(LED_RED, LOW);
                 }
             }
