@@ -80,15 +80,8 @@ float clamp(float value, int min_value, int max_value) {
 float pure_pursuit_but_cooler( auto tinyKart, const ScanPoint &scan, float hello ){
     auto x = scan.x;
     auto y = scan.y; 
-    /* auto normalizer = sqrt( x * x + y * y);
-    if ( y > abs ( x ) ) {
-        normalizer = y;
-    } else { 
-        normalizer = abs( x );
-    }
-    x = x / normalizer;
-    y = y / normalizer; */
-    // the angle between (0,1) and (x,y) in degrees
+
+    // formula is arc sin ( || vecter || * || y axis vector || )
     float ans = asinf( ( sqrtf( x * x + y * y ) ) ) * 57.2957795;
     /// ans = clamp( ans, -45, 45);
     if ( x < 0 && ans > 0 ){
