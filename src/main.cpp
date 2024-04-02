@@ -77,7 +77,7 @@ float clamp(float value, int min_value, int max_value) {
     return std::max(static_cast<float>(min_value), std::min(value, static_cast<float>(max_value)));
 }
 
-float pure_pursuit_but_cooler( auto tinyKart, const ScanPoint &scan, float hello ){
+float pure_pursuit_but_sillier( auto tinyKart, const ScanPoint &scan, float hello ){
     auto x = scan.x;
     auto y = scan.y; 
 
@@ -273,16 +273,34 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
         logger.printf(" no target acquired \n");
         return std::nullopt;
     } else {
-        if (scan[begin_max_cluster].dist( ScanPoint::zero() ) > scan[ length_max_cluster ].dist( ScanPoint::zero() ) ){
+        float largest_distance = 0.0;
+        int pointer_Biggest_ditance = 0.0;
+        for ( auto i = begin_max_cluster; i > length_max_cluster; i++ ){
+            if (scan[i].dist(ScanPoint::zero()) > largest_distance ){
+                largest_distance = scan[i].dist(ScanPoint::zero());
+                pointer_Biggest_ditance = i;
+            }
+        }
+        if ( pointer_Biggest_ditance > 0  ){
+
+            scan_center_biggest_cluster. x = scan[ pointer_Biggest_ditance ].x ;
+            scan_center_biggest_cluster. y = scan[ pointer_Biggest_ditance ].y ;
+            return scan_center_biggest_cluster; 
+        }
+        else if (scan[begin_max_cluster].dist( ScanPoint::zero() ) > scan[ length_max_cluster ].dist( ScanPoint::zero() ) ){
             scan_center_biggest_cluster. x = scan[ begin_max_cluster ].x ;
             scan_center_biggest_cluster. y = scan[ begin_max_cluster ].y ;
+        } else {
+            scan_center_biggest_cluster. x = scan[ length_max_cluster ].x ;
+            scan_center_biggest_cluster. y = scan[ length_max_cluster ].y ;
+        } 
+        { /*
+            scan_center_biggest_cluster.x = scan[begin_max_cluster].x + scan[ length_max_cluster ].x;
+            scan_center_biggest_cluster.x = (scan_center_biggest_cluster.x ) / 2;
+            scan_center_biggest_cluster.y = scan[begin_max_cluster].y + scan[ length_max_cluster ].y;
+            scan_center_biggest_cluster.y = (scan_center_biggest_cluster.y) / 2;
+            */
         }
-        /*
-        scan_center_biggest_cluster.x = scan[begin_max_cluster].x + scan[ length_max_cluster ].x;
-        scan_center_biggest_cluster.x = (scan_center_biggest_cluster.x ) / 2;
-        scan_center_biggest_cluster.y = scan[begin_max_cluster].y + scan[ length_max_cluster ].y;
-        scan_center_biggest_cluster.y = (scan_center_biggest_cluster.y) / 2;
-        */
         // logger.printf( " %hi \n", (int16_t) (number_of_gaps) );
         // logger.printf( " (%hi, %hi) \n", (int32_t)(scan_center_biggest_cluster.x *1000) , (int32_t)(scan_center_biggest_cluster.y *1000) );
         return scan_center_biggest_cluster;
@@ -377,7 +395,8 @@ void loop() {
                 
                 
                 if( (target_pt.has_value()) ){
-                    auto steering_angle = pure_pursuit_but_cooler(tinyKart, target_pt.value(), 0);
+                    float steering_angle = pure_pursuit_but_sillier(tinyKart, target_pt.value(), 0);
+                    /// steering_angle = pure_pursuit::calculate_command_to_point(tinyKart, target_pt.value(), 4).steering_angle;
                     tinyKart->set_steering(steering_angle);
                     logger.printf( "(%i x, %i y) ang %i \n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000), 
                     (int32_t) (steering_angle * 10 ) );
@@ -386,10 +405,9 @@ void loop() {
                     digitalWrite(LED_RED, HIGH);
                 } else {
 
-                    tinyKart->set_forward(0.16);
                     tinyKart->set_steering(0.0);
-                    doTinyKartBrakingTrick(tinyKart, scan, 0, 45);
-                    tinyKart->set_reverse(0.16);
+                    /// doTinyKartBrakingTrick(tinyKart, scan, 0, 45);
+                    /// tinyKart->set_neutral();
                     digitalWrite(LED_RED, LOW);
                 }
             }
