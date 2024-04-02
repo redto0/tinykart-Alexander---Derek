@@ -285,7 +285,6 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
 
             scan_center_biggest_cluster. x = scan[ pointer_Biggest_ditance ].x ;
             scan_center_biggest_cluster. y = scan[ pointer_Biggest_ditance ].y ;
-            return scan_center_biggest_cluster; 
         }
         else if (scan[begin_max_cluster].dist( ScanPoint::zero() ) > scan[ length_max_cluster ].dist( ScanPoint::zero() ) ){
             scan_center_biggest_cluster. x = scan[ begin_max_cluster ].x ;
@@ -406,6 +405,7 @@ void loop() {
                 } else {
 
                     tinyKart->set_steering(0.0);
+                    tinyKart->set_forward(0.15);
                     /// doTinyKartBrakingTrick(tinyKart, scan, 0, 45);
                     /// tinyKart->set_neutral();
                     digitalWrite(LED_RED, LOW);
