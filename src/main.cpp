@@ -278,35 +278,15 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
         logger.printf(" no target acquired \n");
         return std::nullopt;
     } else {
-        float largest_distance = 0.0;
-        int pointer_Biggest_ditance = 0.0;
+        float scan_center_x = 0.0;
+        float scan_center_y = 0.0;
         for ( auto i = begin_max_cluster; i < length_max_cluster; i++ ){
-            if (scan[i].dist(ScanPoint::zero()) > largest_distance ){
-                largest_distance = scan[i].dist(ScanPoint::zero());
-                pointer_Biggest_ditance = i;
-            }
+            scan_center_x += scan[i].x;
+            scan_center_y += scan[i].y;
         }
-        if ( pointer_Biggest_ditance > 0  ){
 
-            scan_center_biggest_cluster. x = scan[ pointer_Biggest_ditance ].x ;
-            scan_center_biggest_cluster. y = scan[ pointer_Biggest_ditance ].y ;
-        }
-        else if (scan[begin_max_cluster].dist( ScanPoint::zero() ) > scan[ length_max_cluster ].dist( ScanPoint::zero() ) ){
-            scan_center_biggest_cluster. x = scan[ begin_max_cluster ].x ;
-            scan_center_biggest_cluster. y = scan[ begin_max_cluster ].y ;
-        } else {
-            scan_center_biggest_cluster. x = scan[ length_max_cluster ].x ;
-            scan_center_biggest_cluster. y = scan[ length_max_cluster ].y ;
-        } 
-        { /*
-            scan_center_biggest_cluster.x = scan[begin_max_cluster].x + scan[ length_max_cluster ].x;
-            scan_center_biggest_cluster.x = (scan_center_biggest_cluster.x ) / 2;
-            scan_center_biggest_cluster.y = scan[begin_max_cluster].y + scan[ length_max_cluster ].y;
-            scan_center_biggest_cluster.y = (scan_center_biggest_cluster.y) / 2;
-            */
-        }
-        // logger.printf( " %hi \n", (int16_t) (number_of_gaps) );
-        // logger.printf( " (%hi, %hi) \n", (int32_t)(scan_center_biggest_cluster.x *1000) , (int32_t)(scan_center_biggest_cluster.y *1000) );
+        scan_center_biggest_cluster.x = scan_center_x / ( length_max_cluster - begin_max_cluster );
+        scan_center_biggest_cluster.y = scan_center_y / ( length_max_cluster - begin_max_cluster );
         return scan_center_biggest_cluster;
     }
 }
