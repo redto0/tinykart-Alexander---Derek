@@ -191,6 +191,8 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
     // TODO
     
     /// float rDist = 0.5;
+
+    // INITS
     float distance_array[scan.size()];
     distance_array[0] = scan[0].dist(ScanPoint::zero());
     auto closetPoint = -1;
@@ -198,28 +200,31 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
 
     // find closest point
     for(int i = 1; i < scan.size(); i++){
-        distance_array[i] = scan[i].dist(ScanPoint::zero());
+        distance_array[i] = scan[i].dist(ScanPoint::zero()); // CALC DISTANCE OF EACH POINT
         if ( distance_array[i] > max_dist ){
-            distance_array[i] = 0;
+            distance_array[i] = 0; // IGNORE EXTREMELY FAR POINTS?
         }
         if( distance_array[i] > 0 && closetPointDist > distance_array[i]){
             closetPoint = i;
-            closetPointDist = distance_array[i];
+            closetPointDist = distance_array[i]; // POPULATE DISTANCE ARRAY
         }
+        // If the distance is non-zero and smaller than the current closest point, 
+        // update the closest point index and distance
         /// if ( distance[i] > max_dist )
     } 
     // zero out other points
-    if ( !(closetPoint == -1) ){ 
+    if ( !(closetPoint == -1) ){ // IF CLOSEST POINT IS FOUND...
 
-        for(auto i = 0; i < scan.size(); i++){
+        for(auto i = 0; i < scan.size(); i++){ // LOOP THROUGH POINTS
             if( scan[closetPoint].dist(scan[i]) <= rDist ){
-                distance_array[i] = 0;
+                distance_array[i] = 0; // SET THEM TO ZERO
             }
         }
     }
-    distance_array[closetPoint] = 0;
+    distance_array[closetPoint] = 0; // ZERO CLOSEST POINT
     /// finding the gaps
     /// the gap flag
+    // INIT
     bool is_a_gap = false;
     int begin_of_cluster = 0;
     int begin_max_cluster = 0;
@@ -275,7 +280,7 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
     } else {
         float largest_distance = 0.0;
         int pointer_Biggest_ditance = 0.0;
-        for ( auto i = begin_max_cluster; i > length_max_cluster; i++ ){
+        for ( auto i = begin_max_cluster; i < length_max_cluster; i++ ){
             if (scan[i].dist(ScanPoint::zero()) > largest_distance ){
                 largest_distance = scan[i].dist(ScanPoint::zero());
                 pointer_Biggest_ditance = i;
@@ -373,7 +378,7 @@ void loop() {
     noInterrupts();
     auto res = ld06.get_scan();
     interrupts();
-    digitalWrite(LED_RED, LOW);
+    digitalWrite(LED_RED, LOW); // LED RED LIGHT OFFF
 
     
     // Check if we have a scan frame
@@ -396,19 +401,19 @@ void loop() {
                 if( (target_pt.has_value()) ){
                     float steering_angle = pure_pursuit_but_sillier(tinyKart, target_pt.value(), 0);
                     /// steering_angle = pure_pursuit::calculate_command_to_point(tinyKart, target_pt.value(), 4).steering_angle;
-                    tinyKart->set_steering(steering_angle);
+                    tinyKart->set_steering(steering_angle); // STEER WITH ANGLE FROM SILLIER
                     logger.printf( "(%i x, %i y) ang %i \n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000), 
                     (int32_t) (steering_angle * 10 ) );
 
                     tinyKart->set_forward(0.16);
-                    digitalWrite(LED_RED, HIGH);
+                    digitalWrite(LED_RED, HIGH); // RED LIGHT ON IF TARGET FOUND
                 } else {
 
-                    tinyKart->set_steering(0.0);
-                    tinyKart->set_forward(0.15);
+                    tinyKart->set_steering(0.0); // NO TARGET SO CONTINUE FORWARD
+                    tinyKart->set_forward(0.16);
                     /// doTinyKartBrakingTrick(tinyKart, scan, 0, 45);
                     /// tinyKart->set_neutral();
-                    digitalWrite(LED_RED, LOW);
+                    digitalWrite(LED_RED, LOW); // RED LIGHT OFF NO TARGET
                 }
             }
         } else {
