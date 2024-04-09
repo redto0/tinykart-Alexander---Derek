@@ -395,7 +395,7 @@ void loop() {
              // run pio device monitor -b 115200
              // online research ingores the fact that most of this is custom writtern
 
-                auto target_pt = find_gap_naive( scan, 1.5, 5, 0.5);
+                auto target_pt = find_gap_naive( scan, 1.5, 10, 0.5);
                 
                 
                 if( (target_pt.has_value()) ){
