@@ -73,119 +73,46 @@ float slopeBreaking = 1 / (0.5 - startBrakingDistance);
 float max_braking_trick_angle = 20;
 // in degrees converting to rads
 float max_braking_angle_constant = tan(30 * 0.01745329);
-float clamp(float value, int min_value, int max_value) {
-    return std::max(static_cast<float>(min_value), std::min(value, static_cast<float>(max_value)));
-}
+
 
 float pure_pursuit_but_sillier( auto tinyKart, const ScanPoint &scan, float hello ){
     auto x = scan.x;
     auto y = scan.y; 
+    auto magnitude = scan.dist( ScanPoint::zero());
+    auto Aphfa = asinf( ( sqrtf( x * x + y * y ) ) ) ; /// * 57.2957795;
 
-    // formula is arc sin ( || vecter || * || y axis vector || )
-    float ans = asinf( ( sqrtf( x * x + y * y ) ) ) * 57.2957795;
-    /// ans = clamp( ans, -45, 45);
-    if ( x < 0 && ans > 0 ){
-        ans = ans * -1;
-    }
-    return ans;
+    auto R = magnitude / 2 * sin( Aphfa );
+    auto steering_angle = (magnitude); 
+    return 0;
 }
 
-std::optional<ScanPoint> find_closest_point(const std::vector<ScanPoint> &scan, float max_dist_from_ldar, float maxClusterDistance){
-    double distance_array[scan.size()];
-    for(auto i = 0; i < scan.size(); i++){
-        if( scan[i].x != 0 && (scan[i].y) != 0 ) {
-            distance_array[i] = scan[i].dist(ScanPoint::zero());
-        }
-    }
+/// Calculates the command to move the kart to some target point.
+AckermannCommand calculate_command_to_point(const TinyKart *tinyKart, ScanPoint target_point,
+                                            float max_lookahead) {
+    auto x = target_point.x;
+    auto y = target_point.y; 
+    auto magnitude = target_point.dist( ScanPoint::zero());
+    auto Aphfa = asinf( ( sqrtf( x * x + y * y ) ) ) ; /// * 57.2957795;
 
-    int current_first = 0;
-    ScanPoint closest_scan ;
-    closest_scan.x = 1000;
-    bool is_last_a_zero = false;
-    int start = 0;
-    if(distance_array[0] != 0){
-        is_last_a_zero= true;
-    }
-    for(auto i = 1; i < scan.size(); i++){
-        // check if its a non zero
-        if(distance_array[i] != 0 && distance_array[i] < max_dist_from_ldar) {
-            if(is_last_a_zero = true){
-                // set the begining of the cluster
-                current_first = i;
-                is_last_a_zero = false;
-            } else {
-                // check if this cluster is within size limits
-                if( scan[current_first].dist(scan[i]) > maxClusterDistance ) {
-                    // check to see if this cluster has more than one point
-                    if( scan[i-1].dist(scan[i]) > maxClusterDistance ){
-                        // this is a new cluster. 
-                        // sets the pointer to the next non zero element. 
-                        current_first = i;
-                        // also ends this literation of the loop. 
-                    } else {
-                        // check the object
-                        // create a mid point from the past ones
-                        ScanPoint new_scan;
-                        new_scan.x = ( scan[current_first].x + scan[i].x ) / 2;
-                        new_scan.y = ( scan[current_first].y + scan[i].y ) / 2;
+    auto R = magnitude / 2 * sin( Aphfa );
+    auto steering_angle = atan ( tinyKart->get_wheelbase() / R );
 
-                        // check is there is a closest point
-                        if( (closest_scan.x == 1000  ) ) {
-                            // add this as the first closest point
-                            closest_scan.x = new_scan.x;
-                            closest_scan.y = new_scan.y;
-
-                            // check if this new point is closer than the last one
-                        } else if ( closest_scan.dist(ScanPoint::zero()) > new_scan.dist(ScanPoint::zero() ) ){
-                            // set to the new scan
-                            closest_scan.x = new_scan.x;
-                            closest_scan.y = new_scan.y;
-                        }
-                    }
-                }
-            }
-        // switch to if the element is zero
-        } else {
-            i--;
-            if (current_first = i) {continue; }
-            // check if this cluster is within size limits
-                if( scan[current_first].dist(scan[i]) > maxClusterDistance){
-                    // check to see if this cluster has more than one point
-                    if( (current_first + 1) == i){
-                        // fail this cluster and set i to the next point.
-                        // set the pointer to the next non zero element. 
-                        current_first = i;
-                    } else {
-                        // create a mid point from the past ones
-                        ScanPoint new_scan;
-                        new_scan.x = ( scan[current_first].x + scan[i].x ) / 2;
-                        new_scan.y = ( scan[current_first].y + scan[i].y ) / 2;
-
-                        // check is there is a closest point
-                        if( (closest_scan.x == 1000  ) ){
-                            // add this as the first closest point
-                            closest_scan.x = new_scan.x;
-                            closest_scan.y = new_scan.y;
-
-                            // check if this new point is closer than the last one
-                        } else if ( closest_scan.dist(ScanPoint::zero()) > new_scan.dist(ScanPoint::zero() ) ){
-                            // set to the new scan
-                            closest_scan.x = new_scan.x;
-                            closest_scan.y = new_scan.y;
-                        }
-                    }
-                }
-            i++;
-            is_last_a_zero = true;
-        }// end if chain
-    }// end loop
-    if(closest_scan.x == 1000){
-        return std::nullopt;
-    } else {
-        return closest_scan;
-    }
+    AckermannCommand commands_to_point{};
     
-}// end fuction
+    commands_to_point.throttle_percent = 0.15;
+    if (x >= 0){
+        commands_to_point.steering_angle = steering_angle * 57.2957795;
+        return commands_to_point;
+    } else if ( x < 0 && steering_angle > 0){
+        commands_to_point.steering_angle = steering_angle * -57.2957795;
+        return commands_to_point;
+    } 
+    commands_to_point.steering_angle = steering_angle * 57.2957795;
+    return commands_to_point;
+    
+}
+ //TODO    
+
 
 std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint8_t min_gap_size, float max_dist, float rDist) {
     // TODO
@@ -298,13 +225,6 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
             scan_center_biggest_cluster. x = scan[ length_max_cluster ].x ;
             scan_center_biggest_cluster. y = scan[ length_max_cluster ].y ;
         } 
-        { /*
-            scan_center_biggest_cluster.x = scan[begin_max_cluster].x + scan[ length_max_cluster ].x;
-            scan_center_biggest_cluster.x = (scan_center_biggest_cluster.x ) / 2;
-            scan_center_biggest_cluster.y = scan[begin_max_cluster].y + scan[ length_max_cluster ].y;
-            scan_center_biggest_cluster.y = (scan_center_biggest_cluster.y) / 2;
-            */
-        }
         // logger.printf( " %hi \n", (int16_t) (number_of_gaps) );
         // logger.printf( " (%hi, %hi) \n", (int32_t)(scan_center_biggest_cluster.x *1000) , (int32_t)(scan_center_biggest_cluster.y *1000) );
         return scan_center_biggest_cluster;
@@ -379,7 +299,7 @@ void loop() {
     auto res = ld06.get_scan();
     interrupts();
     // digitalWrite(LED_RED, LOW); // LED RED LIGHT OFFF
-
+    /// logger.printf("lopper \n");
     
     // Check if we have a scan frame
     if (res) {
@@ -399,11 +319,11 @@ void loop() {
                 
                 
                 if( (target_pt.has_value()) ){
-                    float steering_angle = pure_pursuit_but_sillier(tinyKart, target_pt.value(), 0);
-                    /// steering_angle = pure_pursuit::calculate_command_to_point(tinyKart, target_pt.value(), 4).steering_angle;
+                    /// float steering_angle = pure_pursuit_but_sillier(tinyKart, target_pt.value(), 0);
+                    auto steering_angle = calculate_command_to_point(tinyKart, target_pt.value(), 4).steering_angle;
                     tinyKart->set_steering(steering_angle); // STEER WITH ANGLE FROM SILLIER
                     logger.printf( "(%i x, %i y) ang %i \n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000), 
-                    (int32_t) (steering_angle * 10 ) );
+                        (int32_t) (steering_angle * 10 ) );
 
                     tinyKart->set_forward(0.16);
                     digitalWrite(LED_RED, HIGH); // RED LIGHT ON IF TARGET FOUND
@@ -414,6 +334,7 @@ void loop() {
                     /// doTinyKartBrakingTrick(tinyKart, scan, 0, 45);
                     /// tinyKart->set_neutral();
                     digitalWrite(LED_RED, LOW); // RED LIGHT OFF NO TARGET
+                    logger.printf("no target \n\n");
                 }
             }
         } else {
