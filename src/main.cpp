@@ -82,18 +82,26 @@ AckermannCommand calculate_command_to_point(const TinyKart *tinyKart, ScanPoint 
     auto magnitude = target_point.dist( ScanPoint::zero());
     auto Aphfa = asinf( ( sqrtf( x * x + y * y ) ) ) ; /// * 57.2957795;
     auto R = magnitude / 2 * sin( Aphfa );
-    auto steering_angle = atan ( tinyKart->get_wheelbase() / R );
+    auto steering_angle = atan ( tinyKart->get_wheelbase() / R ) * 57.2957795;
+
+    // LIMIT STEERING ANGLE
+    if (steering_angle >= 24) {
+        steering_angle = 23;
+    }
+    if (steering_angle <= -24) {
+        steering_angle = -23;
+    }
 
     AckermannCommand commands_to_point{};
     commands_to_point.throttle_percent = 0.15;
     if (x >= 0){
-        commands_to_point.steering_angle = steering_angle * 57.2957795;
+        commands_to_point.steering_angle = steering_angle;
         return commands_to_point;
     } else if ( x < 0 && steering_angle > 0){
-        commands_to_point.steering_angle = steering_angle * -57.2957795;
+        commands_to_point.steering_angle = steering_angle * -1;
         return commands_to_point;
     } 
-    commands_to_point.steering_angle = steering_angle * 57.2957795;
+    commands_to_point.steering_angle = steering_angle;
     return commands_to_point;
     
 }
@@ -439,12 +447,12 @@ void loop() {
              // run pio device monitor -b 115200
              // online research ingores the fact that most of this is custom writtern
 
-                auto target_pt = find_gap_naive( scan, 1.5, 10, 0.5);
+                auto target_pt = find_gap_naive( scan, 0.5, 10, 0.5);
                 
                 
                 if( (target_pt.has_value()) ){
-                    float steering_angle = pure_pursuit_but_with_glasses(tinyKart, target_pt.value(), 0.2);
-                    steering_angle = calculate_command_to_point(tinyKart, target_pt.value(), 4).steering_angle;
+                    /// float steering_angle = pure_pursuit_but_with_glasses(tinyKart, target_pt.value(), 0.2);
+                    float steering_angle = calculate_command_to_point(tinyKart, target_pt.value(), 4).steering_angle;
                     tinyKart->set_steering(steering_angle); // STEER WITH ANGLE FROM SILLIER
                     logger.printf( "(%i x, %i y) ang %i \n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000), 
                         (int32_t) (steering_angle * 10 ) );
