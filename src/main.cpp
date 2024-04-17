@@ -73,9 +73,7 @@ float slopeBreaking = 1 / (0.5 - startBrakingDistance);
 float max_braking_trick_angle = 20;
 // in degrees converting to rads
 float max_braking_angle_constant = tan(30 * 0.01745329);
-float clamp(float value, int min_value, int max_value) {
-    return std::max(static_cast<float>(min_value), std::min(value, static_cast<float>(max_value)));
-}
+
 
 float pure_pursuit_but_with_glasses(auto tinyKart, const ScanPoint &scan, float max_viewing_dist) 
 {
@@ -325,13 +323,6 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
             scan_center_biggest_cluster. x = scan[ length_max_cluster ].x ;
             scan_center_biggest_cluster. y = scan[ length_max_cluster ].y ;
         } 
-        { /*
-            scan_center_biggest_cluster.x = scan[begin_max_cluster].x + scan[ length_max_cluster ].x;
-            scan_center_biggest_cluster.x = (scan_center_biggest_cluster.x ) / 2;
-            scan_center_biggest_cluster.y = scan[begin_max_cluster].y + scan[ length_max_cluster ].y;
-            scan_center_biggest_cluster.y = (scan_center_biggest_cluster.y) / 2;
-            */
-        }
         // logger.printf( " %hi \n", (int16_t) (number_of_gaps) );
         // logger.printf( " (%hi, %hi) \n", (int32_t)(scan_center_biggest_cluster.x *1000) , (int32_t)(scan_center_biggest_cluster.y *1000) );
         return scan_center_biggest_cluster;
@@ -406,7 +397,7 @@ void loop() {
     auto res = ld06.get_scan();
     interrupts();
     // digitalWrite(LED_RED, LOW); // LED RED LIGHT OFFF
-
+    /// logger.printf("lopper \n");
     
     // Check if we have a scan frame
     if (res) {
@@ -430,7 +421,7 @@ void loop() {
                     /// steering_angle = pure_pursuit::calculate_command_to_point(tinyKart, target_pt.value(), 4).steering_angle;
                     tinyKart->set_steering(steering_angle); // STEER WITH ANGLE FROM SILLIER
                     logger.printf( "(%i x, %i y) ang %i \n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000), 
-                    (int32_t) (steering_angle * 10 ) );
+                        (int32_t) (steering_angle * 10 ) );
 
                     tinyKart->set_forward(0.16);
                     digitalWrite(LED_RED, HIGH); // RED LIGHT ON IF TARGET FOUND
@@ -441,6 +432,7 @@ void loop() {
                     /// doTinyKartBrakingTrick(tinyKart, scan, 0, 45);
                     /// tinyKart->set_neutral();
                     digitalWrite(LED_RED, LOW); // RED LIGHT OFF NO TARGET
+                    logger.printf("no target \n\n");
                 }
             }
         } else {
