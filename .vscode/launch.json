@@ -12,11 +12,11 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug",
-            "executable": "C:/Users/servd/OneDrive/Documents/GitHub/tinykart-Alexander---Derek/.pio/build/nucleo_h723zg/firmware.elf",
+            "executable": "C:/Users/bocca/OneDrive/Documents/GitHub/tinykart-Alexander---Derek/.pio/build/nucleo_h723zg/firmware.elf",
             "projectEnvName": "nucleo_h723zg",
-            "toolchainBinDir": "C:/Users/servd/.platformio/packages/toolchain-gccarmnoneeabi/bin",
+            "toolchainBinDir": "C:/Users/bocca/.platformio/packages/toolchain-gccarmnoneeabi/bin",
             "internalConsoleOptions": "openOnSessionStart",
-            "svdPath": "C:/Users/servd/.platformio/platforms/ststm32/misc/svd/STM32H723.svd",
+            "svdPath": "C:/Users/bocca/.platformio/platforms/ststm32/misc/svd/STM32H723.svd",
             "preLaunchTask": {
                 "type": "PlatformIO",
                 "task": "Pre-Debug (nucleo_h723zg)"
@@ -26,21 +26,21 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug (skip Pre-Debug)",
-            "executable": "C:/Users/servd/OneDrive/Documents/GitHub/tinykart-Alexander---Derek/.pio/build/nucleo_h723zg/firmware.elf",
+            "executable": "C:/Users/bocca/OneDrive/Documents/GitHub/tinykart-Alexander---Derek/.pio/build/nucleo_h723zg/firmware.elf",
             "projectEnvName": "nucleo_h723zg",
-            "toolchainBinDir": "C:/Users/servd/.platformio/packages/toolchain-gccarmnoneeabi/bin",
+            "toolchainBinDir": "C:/Users/bocca/.platformio/packages/toolchain-gccarmnoneeabi/bin",
             "internalConsoleOptions": "openOnSessionStart",
-            "svdPath": "C:/Users/servd/.platformio/platforms/ststm32/misc/svd/STM32H723.svd"
+            "svdPath": "C:/Users/bocca/.platformio/platforms/ststm32/misc/svd/STM32H723.svd"
         },
         {
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug (without uploading)",
-            "executable": "C:/Users/servd/OneDrive/Documents/GitHub/tinykart-Alexander---Derek/.pio/build/nucleo_h723zg/firmware.elf",
+            "executable": "C:/Users/bocca/OneDrive/Documents/GitHub/tinykart-Alexander---Derek/.pio/build/nucleo_h723zg/firmware.elf",
             "projectEnvName": "nucleo_h723zg",
-            "toolchainBinDir": "C:/Users/servd/.platformio/packages/toolchain-gccarmnoneeabi/bin",
+            "toolchainBinDir": "C:/Users/bocca/.platformio/packages/toolchain-gccarmnoneeabi/bin",
             "internalConsoleOptions": "openOnSessionStart",
-            "svdPath": "C:/Users/servd/.platformio/platforms/ststm32/misc/svd/STM32H723.svd",
+            "svdPath": "C:/Users/bocca/.platformio/platforms/ststm32/misc/svd/STM32H723.svd",
             "loadMode": "manual"
         }
     ]

@@ -74,6 +74,32 @@ float max_braking_trick_angle = 20;
 // in degrees converting to rads
 float max_braking_angle_constant = tan(30 * 0.01745329);
 
+/// Calculates the command to move the kart to some target point.
+AckermannCommand calculate_command_to_point(const TinyKart *tinyKart, ScanPoint target_point,
+                                            float max_lookahead) {
+    auto x = target_point.x;
+    auto y = target_point.y; 
+    auto magnitude = target_point.dist( ScanPoint::zero());
+    auto Aphfa = asinf( ( sqrtf( x * x + y * y ) ) ) ; /// * 57.2957795;
+    auto R = magnitude / 2 * sin( Aphfa );
+    auto steering_angle = atan ( tinyKart->get_wheelbase() / R );
+
+    AckermannCommand commands_to_point{};
+    commands_to_point.throttle_percent = 0.15;
+    if (x >= 0){
+        commands_to_point.steering_angle = steering_angle * 57.2957795;
+        return commands_to_point;
+    } else if ( x < 0 && steering_angle > 0){
+        commands_to_point.steering_angle = steering_angle * -57.2957795;
+        return commands_to_point;
+    } 
+    commands_to_point.steering_angle = steering_angle * 57.2957795;
+    return commands_to_point;
+    
+}
+ //TODO    
+
+
 
 float pure_pursuit_but_with_glasses(auto tinyKart, const ScanPoint &scan, float max_viewing_dist) 
 {
@@ -418,7 +444,7 @@ void loop() {
                 
                 if( (target_pt.has_value()) ){
                     float steering_angle = pure_pursuit_but_with_glasses(tinyKart, target_pt.value(), 0.2);
-                    /// steering_angle = pure_pursuit::calculate_command_to_point(tinyKart, target_pt.value(), 4).steering_angle;
+                    steering_angle = calculate_command_to_point(tinyKart, target_pt.value(), 4).steering_angle;
                     tinyKart->set_steering(steering_angle); // STEER WITH ANGLE FROM SILLIER
                     logger.printf( "(%i x, %i y) ang %i \n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000), 
                         (int32_t) (steering_angle * 10 ) );
