@@ -77,17 +77,44 @@ float clamp(float value, int min_value, int max_value) {
     return std::max(static_cast<float>(min_value), std::min(value, static_cast<float>(max_value)));
 }
 
-float pure_pursuit_but_sillier( auto tinyKart, const ScanPoint &scan, float hello ){
-    auto x = scan.x;
-    auto y = scan.y; 
+float pure_pursuit_but_with_glasses(auto tinyKart, const ScanPoint &scan, float max_viewing_dist) 
+{
+    //non-const local variable and initializing it with the values of scan
+    ScanPoint copy_scan = scan; // Create a mutable copy of scan because scan is const & read-only
 
-    // formula is arc sin ( || vecter || * || y axis vector || )
+    if (auto target_dist = scan.dist(ScanPoint::zero()); target_dist > max_viewing_dist) {
+        auto turn_angle = atan2f(scan.y, scan.x);
+
+        auto y_2 = sin(turn_angle) * max_viewing_dist;
+        auto x_2 = cos(turn_angle) * max_viewing_dist;
+
+        copy_scan.x = x_2;
+        copy_scan.y = y_2;
+    }
+
+    float alpha = atan2f(copy_scan.y, copy_scan.x); // CALC ANGLE
+
+    float steering_angle = atanf(2.0 * 0.335 * sinf(alpha) / copy_scan.dist(ScanPoint::zero())); // SET STEERING ANGLE
+
+    steering_angle = steering_angle * float(180.0) / float(3.1415); // CONVERT TO DEGREES
+
+    // LIMIT STEERING ANGLE
+    if (steering_angle >= 24) {
+        steering_angle = 23;
+    }
+    if (steering_angle <= -24) {
+        steering_angle = -23;
+    }
+
+    return steering_angle;
+
+    /* // formula is arc sin ( || vecter || * || y axis vector || )
     float ans = asinf( ( sqrtf( x * x + y * y ) ) ) * 57.2957795;
     /// ans = clamp( ans, -45, 45);
     if ( x < 0 && ans > 0 ){
         ans = ans * -1;
     }
-    return ans;
+    return ans; */
 }
 
 std::optional<ScanPoint> find_closest_point(const std::vector<ScanPoint> &scan, float max_dist_from_ldar, float maxClusterDistance){
@@ -279,17 +306,17 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
         return std::nullopt;
     } else {
         float largest_distance = 0.0;
-        int pointer_Biggest_ditance = 0.0;
+        int pointer_Biggest_distance = 0.0;
         for ( auto i = begin_max_cluster; i < length_max_cluster; i++ ){
             if (scan[i].dist(ScanPoint::zero()) > largest_distance ){
                 largest_distance = scan[i].dist(ScanPoint::zero());
-                pointer_Biggest_ditance = i;
+                pointer_Biggest_distance = i;
             }
         }
-        if ( pointer_Biggest_ditance > 0  ){
+        if ( pointer_Biggest_distance > 0  ){
 
-            scan_center_biggest_cluster. x = scan[ pointer_Biggest_ditance ].x ;
-            scan_center_biggest_cluster. y = scan[ pointer_Biggest_ditance ].y ;
+            scan_center_biggest_cluster. x = scan[ pointer_Biggest_distance ].x ;
+            scan_center_biggest_cluster. y = scan[ pointer_Biggest_distance ].y ;
         }
         else if (scan[begin_max_cluster].dist( ScanPoint::zero() ) > scan[ length_max_cluster ].dist( ScanPoint::zero() ) ){
             scan_center_biggest_cluster. x = scan[ begin_max_cluster ].x ;
@@ -399,7 +426,7 @@ void loop() {
                 
                 
                 if( (target_pt.has_value()) ){
-                    float steering_angle = pure_pursuit_but_sillier(tinyKart, target_pt.value(), 0);
+                    float steering_angle = pure_pursuit_but_with_glasses(tinyKart, target_pt.value(), 0.2);
                     /// steering_angle = pure_pursuit::calculate_command_to_point(tinyKart, target_pt.value(), 4).steering_angle;
                     tinyKart->set_steering(steering_angle); // STEER WITH ANGLE FROM SILLIER
                     logger.printf( "(%i x, %i y) ang %i \n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000), 
