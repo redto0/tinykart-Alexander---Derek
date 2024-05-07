@@ -19,7 +19,12 @@ LD06 ld06{};
 
 // Scan processor
 // was 180, 360
+<<<<<<< Updated upstream
 ScanBuilder scan_builder{180, 360, ScanPoint{0.1524, 0}}; // PARAMETER FOR LIDAR "CONE"
+=======
+///  ScanPoint{0.1524, 0}
+ScanBuilder scan_builder{180, 360, ScanPoint{0.3, 0}};
+>>>>>>> Stashed changes
 
 /// Starts/stops the kart
 void estop() {
@@ -246,7 +251,8 @@ std::optional<ScanPoint> find_closest_point(const std::vector<ScanPoint> &scan, 
     
 }// end fuction
 
-std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint8_t min_gap_size, float max_dist, float rDist) {
+std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint8_t min_gap_size, float max_dist, 
+                                        float rDist, bool doMidpoint) {
     // TODO
     
     /// float rDist = 0.5;
@@ -339,12 +345,14 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
     } else {
         float largest_distance = 0.0;
         int pointer_Biggest_distance = 0.0;
+        /// finds the largest distance is the biggest gap
         for ( auto i = begin_max_cluster; i < length_max_cluster; i++ ){
             if (scan[i].dist(ScanPoint::zero()) > largest_distance ){
                 largest_distance = scan[i].dist(ScanPoint::zero());
                 pointer_Biggest_distance = i;
             }
         }
+        /// 
         if ( pointer_Biggest_distance > 0  ){
 
             scan_center_biggest_cluster. x = scan[ pointer_Biggest_distance ].x ;
@@ -445,14 +453,16 @@ void loop() {
                 auto scan = *maybe_scan;
                 
              // run pio device monitor -b 115200
-             // online research ingores the fact that most of this is custom writtern
 
-                auto target_pt = find_gap_naive( scan, 0.5, 10, 0.5);
+
+
+                ///                          scan, min_gap_size, max_dist, rDist
+                auto target_pt = find_gap_naive( scan, 2.5, 5, 1.0, false);
                 
                 
                 if( (target_pt.has_value()) ){
-                    /// float steering_angle = pure_pursuit_but_with_glasses(tinyKart, target_pt.value(), 0.2);
-                    float steering_angle = calculate_command_to_point(tinyKart, target_pt.value(), 4).steering_angle;
+                    float steering_angle = pure_pursuit_but_with_glasses(tinyKart, target_pt.value(), 0.2);
+                    /// float steering_angle = calculate_command_to_point(tinyKart, target_pt.value(), 4).steering_angle;
                     tinyKart->set_steering(steering_angle); // STEER WITH ANGLE FROM SILLIER
                     logger.printf( "(%i x, %i y) ang %i \n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000), 
                         (int32_t) (steering_angle * 10 ) );
