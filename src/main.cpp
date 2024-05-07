@@ -19,7 +19,7 @@ LD06 ld06{};
 
 // Scan processor
 // was 180, 360
-ScanBuilder scan_builder{180, 360, ScanPoint{0.1524, 0}};
+ScanBuilder scan_builder{180, 360, ScanPoint{0.1524, 0}}; // PARAMETER FOR LIDAR "CONE"
 
 /// Starts/stops the kart
 void estop() {
