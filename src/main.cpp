@@ -19,12 +19,8 @@ LD06 ld06{};
 
 // Scan processor
 // was 180, 360
-<<<<<<< Updated upstream
-ScanBuilder scan_builder{180, 360, ScanPoint{0.1524, 0}}; // PARAMETER FOR LIDAR "CONE"
-=======
 ///  ScanPoint{0.1524, 0}
-ScanBuilder scan_builder{180, 360, ScanPoint{0.3, 0}};
->>>>>>> Stashed changes
+ScanBuilder scan_builder{180, 360, ScanPoint{0.0, 0}};
 
 /// Starts/stops the kart
 void estop() {
@@ -251,42 +247,45 @@ std::optional<ScanPoint> find_closest_point(const std::vector<ScanPoint> &scan, 
     
 }// end fuction
 
-std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint8_t min_gap_size, float max_dist, 
-                                        float rDist, bool doMidpoint) {
+std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint8_t max_gap_size, float max_dist, 
+                                        float min_dist, float rDist, bool doMidpoint) {
     // TODO
     
     /// float rDist = 0.5;
 
     // INITS
-    float distance_array[scan.size()];
+    float distance_array [scan.size()];
     distance_array[0] = scan[0].dist(ScanPoint::zero());
-    auto closetPoint = -1;
-    auto closetPointDist = 10;
+    auto nearest_Point_index = -1;
+    auto nearest_Point_Dist = 10;
+    int hi = round(scan.size() / 2);
+    distance_array[ hi ] = 0;
 
     // find closest point
     for(int i = 1; i < scan.size(); i++){
         distance_array[i] = scan[i].dist(ScanPoint::zero()); // CALC DISTANCE OF EACH POINT
-        if ( distance_array[i] > max_dist ){
-            distance_array[i] = 0; // IGNORE EXTREMELY FAR POINTS?
+        if ( distance_array[i] > max_dist || distance_array[i] < min_dist){
+            distance_array[i] = 0; // IGNORE EXTREMELY FAR POINTS -d?
+                                    // and close ones now -AFB
         }
-        if( distance_array[i] > 0 && closetPointDist > distance_array[i]){
-            closetPoint = i;
-            closetPointDist = distance_array[i]; // POPULATE DISTANCE ARRAY
+        if( distance_array[i] > 0 && nearest_Point_Dist > distance_array[i]){
+            nearest_Point_index = i;
+            nearest_Point_Dist = distance_array[i]; // POPULATE DISTANCE ARRAY
         }
         // If the distance is non-zero and smaller than the current closest point, 
         // update the closest point index and distance
         /// if ( distance[i] > max_dist )
     } 
     // zero out other points
-    if ( !(closetPoint == -1) ){ // IF CLOSEST POINT IS FOUND...
+    if ( !(nearest_Point_index == -1) ){ // IF CLOSEST POINT IS FOUND...
 
         for(auto i = 0; i < scan.size(); i++){ // LOOP THROUGH POINTS
-            if( scan[closetPoint].dist(scan[i]) <= rDist ){
+            if( scan[nearest_Point_index].dist(scan[i]) <= rDist ){
                 distance_array[i] = 0; // SET THEM TO ZERO
             }
         }
     }
-    distance_array[closetPoint] = 0; // ZERO CLOSEST POINT
+    distance_array[nearest_Point_index] = 0; // ZERO CLOSEST POINT
     /// finding the gaps
     /// the gap flag
     // INIT
@@ -298,27 +297,34 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
     ScanPoint scan_center_biggest_cluster{ 0, 0 };
     if ( distance_array[0] != 0 ){
         is_a_gap = true;
-    }
+    } 
     int number_of_gaps = 0;
     for(auto i = 0; i < scan.size(); i++){
         if(distance_array[i] == 0.0){
             if(is_a_gap == true ){
             /// check if the gap is bigger than the last one!
-                if ( (i - 1) - begin_of_cluster > length_max_cluster ){
+                if ( (i - 1 ) - begin_of_cluster > length_max_cluster ){
                     /// assgin as biggest
-                    length_max_cluster = ( i - 1) - begin_of_cluster;
+                    length_max_cluster = scan[ i - 1 ].dist( scan[ begin_of_cluster ]);
                     begin_max_cluster = begin_of_cluster;
 
                 }
                 is_a_gap = false;
             }
+        }  else if( i  == scan.size() && is_a_gap == true ){
+            // check if wall is legit
+            if ( i - begin_of_cluster > length_max_cluster && i - begin_of_cluster > 0 ){
+                begin_max_cluster = begin_of_cluster;
+                length_max_cluster = scan[ i ].dist( scan[ begin_of_cluster ]);
+            }
         } else if( is_a_gap ){
             // check if the distance is too long
-            if( scan[i].dist(scan[i-1]) >  min_gap_size ){
+            if( scan[i].dist(scan[i - 1]) >  max_gap_size ){
 
-                if ( !( i - 1 == begin_of_cluster) && (i - 1) - begin_of_cluster > length_max_cluster ){
+                auto length_of_this_gap = scan[ i - 1 ].dist( scan[ begin_of_cluster ]);
+                if ( !( i - 1 == begin_of_cluster) && length_of_this_gap > length_max_cluster ){
                     /// assgin as biggest
-                    length_max_cluster = ( i - 1) - begin_of_cluster;
+                    length_max_cluster = length_of_this_gap;
                     begin_max_cluster = begin_of_cluster;
 
                 }
@@ -326,12 +332,6 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
                 
             }
 
-        } else if( (i - 1) == scan.size() && is_a_gap == true ){
-            // check if wall is legit
-            if ( i - begin_of_cluster > length_max_cluster && i - begin_of_cluster > 0 ){
-                begin_max_cluster = begin_of_cluster;
-                length_max_cluster = ( i ) - begin_of_cluster;
-            }
         } else if ( is_a_gap == false ) {
             begin_of_cluster = i;
             is_a_gap = true;
@@ -340,7 +340,7 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
     }
     /// logger.printf("%hi \n", (int16_t)(number_of_gaps));
     if( length_max_cluster == 0){
-        logger.printf(" no target acquired \n");
+        /// logger.printf(" no target acquired \n");
         return std::nullopt;
     } else {
         float largest_distance = 0.0;
@@ -456,17 +456,26 @@ void loop() {
 
 
 
-                ///                          scan, min_gap_size, max_dist, rDist
-                auto target_pt = find_gap_naive( scan, 2.5, 5, 1.0, false);
+                ///                          scan, min_gap_size, max_dist, min_dist, rDist
+                auto target_pt = find_gap_naive( scan, 2.5, 5, 0, 1.0, false);
                 
                 
                 if( (target_pt.has_value()) ){
+
                     float steering_angle = pure_pursuit_but_with_glasses(tinyKart, target_pt.value(), 0.2);
                     /// float steering_angle = calculate_command_to_point(tinyKart, target_pt.value(), 4).steering_angle;
-                    tinyKart->set_steering(steering_angle); // STEER WITH ANGLE FROM SILLIER
-                    logger.printf( "(%i x, %i y) ang %i \n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000), 
-                        (int32_t) (steering_angle * 10 ) );
 
+                    if( target_pt.value().x > 0 ){
+                        steering_angle = steering_angle*-1;
+                    }
+                    tinyKart->set_steering(steering_angle); // STEER WITH ANGLE FROM SILLIER
+                    logger.printf( " goal (x %i [mm], y %i [mm]) \n ang [degrees] %i \n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000), 
+                        (int32_t) (steering_angle * 10 ) );
+                    if(steering_angle > 0){
+                        logger.printf("Left \n");   
+                    } else {
+                        logger.printf("Right \n");
+                    }
                     tinyKart->set_forward(0.16);
                     digitalWrite(LED_RED, HIGH); // RED LIGHT ON IF TARGET FOUND
                 } else {
@@ -476,7 +485,7 @@ void loop() {
                     /// doTinyKartBrakingTrick(tinyKart, scan, 0, 45);
                     /// tinyKart->set_neutral();
                     digitalWrite(LED_RED, LOW); // RED LIGHT OFF NO TARGET
-                    logger.printf("no target \n\n");
+                    /// logger.printf("no target \n no ang\n");
                 }
             }
         } else {
