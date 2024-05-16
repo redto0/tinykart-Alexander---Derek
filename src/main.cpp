@@ -20,7 +20,7 @@ LD06 ld06{};
 // Scan processor
 // was 180, 360
 ///  ScanPoint{0.1524, 0}
-ScanBuilder scan_builder{180, 360, ScanPoint{0.0, 0}};
+ScanBuilder scan_builder{180, 360, ScanPoint{0.0, 0}}; /// LIDAR SCAN SHAPE & SCAN INIT
 
 /// Starts/stops the kart
 void estop() {
@@ -54,7 +54,7 @@ void setup() {
     // Prepare kart for motion
     ESC esc{THROTTLE_PIN, PWM_MAX_DUTY, PWM_FREQ};
     // max third para is 0.3, range >1.6
-    tinyKart = new TinyKart{STEERING_PIN, esc, 0.3, 4.0};
+    tinyKart = new TinyKart{STEERING_PIN, esc, 0.3, 4.5}; /// LAST FLOAT IS BIAS 
     // Init DMA and UART for LiDAR
     dmaSerialRx5.begin(230'400, [&](volatile LD06Buffer buffer) {
         // On each packet received, copy over to driver.
@@ -76,7 +76,7 @@ float max_braking_trick_angle = 20;
 float max_braking_angle_constant = tan(30 * 0.01745329);
 
 /// Calculates the command to move the kart to some target point.
-AckermannCommand calculate_command_to_point(const TinyKart *tinyKart, ScanPoint target_point,
+double calculate_command_to_point(const TinyKart *tinyKart, ScanPoint target_point,
                                             float max_lookahead) {
     auto x = target_point.x;
     auto y = target_point.y; 
@@ -92,7 +92,7 @@ AckermannCommand calculate_command_to_point(const TinyKart *tinyKart, ScanPoint 
     if (steering_angle <= -24) {
         steering_angle = -23;
     }
-
+/* 
     AckermannCommand commands_to_point{};
     commands_to_point.throttle_percent = 0.15;
     if (x >= 0){
@@ -100,10 +100,12 @@ AckermannCommand calculate_command_to_point(const TinyKart *tinyKart, ScanPoint 
         return commands_to_point;
     } else if ( x < 0 && steering_angle > 0){
         commands_to_point.steering_angle = steering_angle * -1;
-        return commands_to_point;
-    } 
-    commands_to_point.steering_angle = steering_angle;
-    return commands_to_point;
+        return commands_to_point; */
+    //} 
+    //commands_to_point.steering_angle = steering_angle;
+    
+    return steering_angle;
+    //commands_to_point;
     
 }
 
@@ -459,8 +461,8 @@ void loop() {
                 
                 if( (target_pt.has_value()) ){
 
-                    float steering_angle = pure_pursuit_but_with_glasses(tinyKart, target_pt.value(), 0.2);
-                    /// float steering_angle = calculate_command_to_point(tinyKart, target_pt.value(), 4).steering_angle;
+                    ///float steering_angle = pure_pursuit_but_with_glasses(tinyKart, target_pt.value(), 0.2);
+                     double steering_angle = calculate_command_to_point(tinyKart, target_pt.value(), 4);
 
                     if( target_pt.value().x > 0 ){
                         steering_angle = steering_angle*-1;
