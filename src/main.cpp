@@ -106,9 +106,6 @@ AckermannCommand calculate_command_to_point(const TinyKart *tinyKart, ScanPoint 
     return commands_to_point;
     
 }
- //TODO    
-
-
 
 float pure_pursuit_but_with_glasses(auto tinyKart, const ScanPoint &scan, float max_viewing_dist) 
 {
@@ -340,7 +337,7 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
     }
     /// logger.printf("%hi \n", (int16_t)(number_of_gaps));
     if( length_max_cluster == 0){
-        /// logger.printf(" no target acquired \n");
+        /// logger.printf(" no target acquired \n"); // REMOVED FOR GUI QUALITY OF LIFE
         return std::nullopt;
     } else {
         float largest_distance = 0.0;
@@ -468,7 +465,8 @@ void loop() {
                     if( target_pt.value().x > 0 ){
                         steering_angle = steering_angle*-1;
                     }
-                    tinyKart->set_steering(steering_angle); // STEER WITH ANGLE FROM SILLIER
+                    tinyKart->set_steering(steering_angle); // STEER WITH ANGLE
+                    /// GUI PRINTING
                     logger.printf( " goal (x %i [mm], y %i [mm]) \n ang [degrees] %i \n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000), 
                         (int32_t) (steering_angle * 10 ) );
                     if(steering_angle > 0){
@@ -492,8 +490,9 @@ void loop() {
             switch (scan_res.error) {
                 case ScanResult::Error::CRCFail:
                     logger.printf("CRC error!\n");
+                   
+                    // GETTING CRC ERRORS ON KART 3 --- LIDAR NOT WORKING!!!
                     break;
-
                 case ScanResult::Error::HeaderByteWrong:
                     logger.printf("Header byte wrong!\n");
                     break;
