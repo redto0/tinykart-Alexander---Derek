@@ -245,7 +245,7 @@ std::optional<ScanPoint> find_closest_point(const std::vector<ScanPoint> &scan, 
 }// end fuction
 
 std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint8_t max_gap_size, float max_dist, 
-                                        float min_dist, float rDist, bool doMidpoint) {
+                                        float min_dist, float rDist, int doMidpoint) {
     // TODO
     
     /// float rDist = 0.5;
@@ -340,31 +340,38 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
         /// logger.printf(" no target acquired \n"); // REMOVED FOR GUI QUALITY OF LIFE
         return std::nullopt;
     } else {
-        float largest_distance = 0.0;
-        int pointer_Biggest_distance = 0.0;
-        /// finds the largest distance is the biggest gap
-        for ( auto i = begin_max_cluster; i < length_max_cluster; i++ ){
-            if (scan[i].dist(ScanPoint::zero()) > largest_distance ){
-                largest_distance = scan[i].dist(ScanPoint::zero());
-                pointer_Biggest_distance = i;
-            }
-        }
-        /// 
-        if ( pointer_Biggest_distance > 0  ){
+        switch(doMidpoint){
+            case 1:
+                float largest_distance = 0.0;
+                int pointer_Biggest_distance = 0.0;
+                /// finds the largest distance is the biggest gap
+                for ( auto i = begin_max_cluster; i < length_max_cluster; i++ ){
+                    if (scan[i].dist(ScanPoint::zero()) > largest_distance ){
+                        largest_distance = scan[i].dist(ScanPoint::zero());
+                        pointer_Biggest_distance = i;
+                    }
+                }
+                /// 
+                if ( pointer_Biggest_distance > 0  ){
 
-            scan_center_biggest_cluster. x = scan[ pointer_Biggest_distance ].x ;
-            scan_center_biggest_cluster. y = scan[ pointer_Biggest_distance ].y ;
+                    scan_center_biggest_cluster. x = scan[ pointer_Biggest_distance ].x ;
+                    scan_center_biggest_cluster. y = scan[ pointer_Biggest_distance ].y ;
+                }   
+                    else if (scan[begin_max_cluster].dist( ScanPoint::zero() ) > scan[ length_max_cluster ].dist( ScanPoint::zero() ) ){
+                        scan_center_biggest_cluster. x = scan[ begin_max_cluster ].x ;
+                        scan_center_biggest_cluster. y = scan[ begin_max_cluster ].y ;
+                } else {
+                    scan_center_biggest_cluster. x = scan[ length_max_cluster ].x ;
+                    scan_center_biggest_cluster. y = scan[ length_max_cluster ].y ;
+                } 
+                // logger.printf( " %hi \n", (int16_t) (number_of_gaps) );
+                // logger.printf( " (%hi, %hi) \n", (int32_t)(scan_center_biggest_cluster.x *1000) , (int32_t)(scan_center_biggest_cluster.y *1000) );
+                return scan_center_biggest_cluster;
+            break;
+
+            case 2;
+                break;
         }
-        else if (scan[begin_max_cluster].dist( ScanPoint::zero() ) > scan[ length_max_cluster ].dist( ScanPoint::zero() ) ){
-            scan_center_biggest_cluster. x = scan[ begin_max_cluster ].x ;
-            scan_center_biggest_cluster. y = scan[ begin_max_cluster ].y ;
-        } else {
-            scan_center_biggest_cluster. x = scan[ length_max_cluster ].x ;
-            scan_center_biggest_cluster. y = scan[ length_max_cluster ].y ;
-        } 
-        // logger.printf( " %hi \n", (int16_t) (number_of_gaps) );
-        // logger.printf( " (%hi, %hi) \n", (int32_t)(scan_center_biggest_cluster.x *1000) , (int32_t)(scan_center_biggest_cluster.y *1000) );
-        return scan_center_biggest_cluster;
     }
 }
 
@@ -454,7 +461,7 @@ void loop() {
 
 
                 ///                          scan, min_gap_size, max_dist, min_dist, rDist
-                auto target_pt = find_gap_naive( scan, 2.5, 5, 0, 1.0, false);
+                auto target_pt = find_gap_naive( scan, 2.5, 5, 0, 1.0, 1);
                 
                 
                 if( (target_pt.has_value()) ){
