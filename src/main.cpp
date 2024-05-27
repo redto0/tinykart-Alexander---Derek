@@ -109,6 +109,7 @@ double calculate_command_to_point(const TinyKart *tinyKart, ScanPoint target_poi
     
 }
 
+
 float pure_pursuit_but_with_glasses(auto tinyKart, const ScanPoint &scan, float max_viewing_dist) 
 {
     //non-const local variable and initializing it with the values of scan
@@ -148,6 +149,7 @@ float pure_pursuit_but_with_glasses(auto tinyKart, const ScanPoint &scan, float 
     }
     return ans; */
 }
+
 
 std::optional<ScanPoint> find_closest_point(const std::vector<ScanPoint> &scan, float max_dist_from_ldar, float maxClusterDistance){
     double distance_array[scan.size()];
@@ -248,6 +250,31 @@ std::optional<ScanPoint> find_closest_point(const std::vector<ScanPoint> &scan, 
 
 std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint8_t max_gap_size, float max_dist, 
                                         float min_dist, float rDist, int doMidpoint) {
+    /// this is the start of andys ideas
+
+    // we should wholesale reuse the enire perivous code of find native gap.
+    float angle_array [scan.size() - 1] = {};
+
+    float calculateAngle(float p1x, float p1y, float p2x, float p2y) {
+        float deltaY = p2y - p1y;
+        float deltaX = p2x - p1x;
+        float angleInRadians = atan2(deltaY, deltaX);
+        float angleInDegrees = angleInRadians * 180 / M_PI;
+        return angleInDegrees;
+    }
+
+    for(int i = 0; i < scan.size() - 1; i++){ 
+        angle_array[i] = calculateAngled(scan[i].x, scan[i].y, scan[i+1].x, scan[i+1].y );
+        // todo cal angle betweeen car points
+    }
+
+    for ( aut0 i = 0; i < angle_array.size(), i++){
+        if()
+    }
+}
+
+std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint8_t max_gap_size, float max_dist, 
+                                        float min_dist, float rDist, int doMidpoint) {
     // TODO
     
     /// float rDist = 0.5;
@@ -269,12 +296,12 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
         }
         if( distance_array[i] > 0 && nearest_Point_Dist > distance_array[i]){
             nearest_Point_index = i;
-            nearest_Point_Dist = distance_array[i]; // POPULATE DISTANCE ARRAY
+            nearest_Point_Dist = distance_array[i]; // POPULATseE DISTANCE ARRAY
         }
         // If the distance is non-zero and smaller than the current closest point, 
         // update the closest point index and distance
         /// if ( distance[i] > max_dist )
-    } 
+    }
     // zero out other points
     if ( !(nearest_Point_index == -1) ){ // IF CLOSEST POINT IS FOUND...
 
