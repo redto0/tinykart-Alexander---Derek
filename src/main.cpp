@@ -248,13 +248,40 @@ std::optional<ScanPoint> find_closest_point(const std::vector<ScanPoint> &scan, 
     
 }// end fuction
 
-std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint8_t max_gap_size, float max_dist, 
-                                        float min_dist, float rDist, int doMidpoint) {
+struct vector_with_angle /// : std::vector
+{   
+    /* data */
+    public:
+    float x = this->x;
+    float y = this->y;
+    float angle = this->angle;
+    float distance;
+    /* constructor */
+    public:
+    vector_with_angle(float xf, float yf, float anglef, float distancef){
+        x = xf;
+        y = yf;
+        angle = anglef;
+        distance = distancef;
+    };
+};
+
+
+std::optional<ScanPoint> find_gap_naive_new_algo(const std::vector<ScanPoint> &scan, uint8_t max_gap_size, float max_dist, 
+                                        float min_dist, float rDist, int doMidpoint, float min_angle, float max_angle) {
     /// this is the start of andys ideas
 
     // we should wholesale reuse the enire perivous code of find native gap.
-    float angle_array [scan.size() - 1] = {};
+    
+    int angle_array_length = 0;
+    for (int i = 0; i > scan.size(); i++){
+        if( scan[i].dist( ScanPoint::zero() ) > 0){
+            angle_array_length++;
+        }
+    }
 
+    vector_with_angle angle_array [angle_array_length] = {};
+    
     float calculateAngle(float p1x, float p1y, float p2x, float p2y) {
         float deltaY = p2y - p1y;
         float deltaX = p2x - p1x;
@@ -262,14 +289,30 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
         float angleInDegrees = angleInRadians * 180 / M_PI;
         return angleInDegrees;
     }
+    int j = 0;
+    for (int i = 0; i < scan.size(); i++){
+        float distf = scan[i].dist(ScanPoint::zero);
+        if( distf > 0){
+            if (j > 0) {
+                angle_array[j] = vector_with_angle( scan[i].x, scan[i].y, 
+                                calculateAngle( scan[i].x, scan[i].y, scan[j - 1], scan[j - 1] ), 
+                                distf );
+            }
+            j++;
+        }
+    }
 
     for(int i = 0; i < scan.size() - 1; i++){ 
-        angle_array[i] = calculateAngled(scan[i].x, scan[i].y, scan[i+1].x, scan[i+1].y );
+        angle_array[i].x = scan[i].x;
+        angle_array[i].y = scan[i].y;
+        angle_array[i].angle = calculateAngled(scan[i].x, scan[i].y, scan[i+1].x, scan[i+1].y );
         // todo cal angle betweeen car points
     }
 
-    for ( aut0 i = 0; i < angle_array.size(), i++){
-        if()
+    for ( aut0 i = 0; i < angle_array.size() - 1, i++){
+        if( angle_array[i].angle < min_angle && angle_array[i].angle > max_angle){
+
+        }
     }
 }
 
