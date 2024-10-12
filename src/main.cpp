@@ -405,12 +405,13 @@ void loop() {
                     logger.printf( "(%i x, %i y) ang %i \n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000), 
                     (int32_t) (steering_angle * 10 ) );
 
-                    tinyKart->set_forward(0.16);
+                    auto powerBoost = abs( ( steering_angle / 24.0) * 0.005 ); //0.025
+                    tinyKart->set_forward(0.18 + powerBoost);
                     digitalWrite(LED_RED, HIGH); // RED LIGHT ON IF TARGET FOUND
                 } else {
 
                     tinyKart->set_steering(0.0); // NO TARGET SO CONTINUE FORWARD
-                    tinyKart->set_forward(0.16);
+                    tinyKart->set_forward(0.17);
                     /// doTinyKartBrakingTrick(tinyKart, scan, 0, 45);
                     /// tinyKart->set_neutral();
                     digitalWrite(LED_RED, LOW); // RED LIGHT OFF NO TARGET
