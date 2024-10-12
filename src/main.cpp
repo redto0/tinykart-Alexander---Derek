@@ -20,7 +20,7 @@ LD06 ld06{};
 // Scan processor
 // was 180, 360
 ///  ScanPoint{0.1524, 0}
-ScanBuilder scan_builder{180, 360, ScanPoint{0.0, 0}}; /// LIDAR SCAN SHAPE & SCAN INIT
+ScanBuilder scan_builder{180, 360, ScanPoint{0.1524, 0}}; /// LIDAR SCAN SHAPE & SCAN INIT
 
 /// Starts/stops the kart
 void estop() {
@@ -29,7 +29,7 @@ void estop() {
     tinyKart->toggle_pause();
     if (true){
         tinyKart->set_neutral();
-        tinyKart->set_steering(0.0);
+        // tinyKart->set_steering(0.0);
     }
     digitalToggle(LED_YELLOW);
 }
@@ -75,6 +75,7 @@ float max_braking_trick_angle = 20;
 // in degrees converting to rads
 float max_braking_angle_constant = tan(30 * 0.01745329);
 
+
 /// Calculates the command to move the kart to some target point.
 double calculate_command_to_point(const TinyKart *tinyKart, ScanPoint target_point,
                                             float max_lookahead) {
@@ -110,7 +111,7 @@ double calculate_command_to_point(const TinyKart *tinyKart, ScanPoint target_poi
 }
 
 
-float pure_pursuit_but_with_glasses(auto tinyKart, const ScanPoint &scan, float max_viewing_dist) 
+float pure_pursuit_but_with_glasses(TinyKart tinyKart, const ScanPoint &scan, float max_viewing_dist) 
 {
     //non-const local variable and initializing it with the values of scan
     ScanPoint copy_scan = scan; // Create a mutable copy of scan because scan is const & read-only
@@ -266,7 +267,7 @@ struct vector_with_angle /// : std::vector
     };
 };
 
-
+/*
 std::optional<ScanPoint> find_gap_naive_new_algo(const std::vector<ScanPoint> &scan, uint8_t max_gap_size, float max_dist, 
                                         float min_dist, float rDist, int doMidpoint, float ideal_angle) {
     /// this is the start of andys ideas
@@ -333,7 +334,7 @@ std::optional<ScanPoint> find_gap_naive_new_algo(const std::vector<ScanPoint> &s
     }
     
 }/// end new algo
-
+*/
 std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint8_t max_gap_size, float max_dist, 
                                         float min_dist, float rDist, int doMidpoint) {
     // TODO
@@ -424,7 +425,7 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
             is_a_gap = true;
             number_of_gaps++;
         }
-    }
+    } logger.printf(" %i \n", (int16_t) number_of_gaps);
     /// logger.printf("%hi \n", (int16_t)(number_of_gaps));
     if( length_max_cluster == 0){
         /// logger.printf(" no target acquired \n"); // REMOVED FOR GUI QUALITY OF LIFE
@@ -458,14 +459,35 @@ std::optional<ScanPoint> find_gap_naive(const std::vector<ScanPoint> &scan, uint
                 // logger.printf( " (%hi, %hi) \n", (int32_t)(scan_center_biggest_cluster.x *1000) , (int32_t)(scan_center_biggest_cluster.y *1000) );
                 return scan_center_biggest_cluster;
             break;
-
-            case 2;
-                break;
         }
     }
+    return std::nullopt;
 }
 
-void doTinyKartBrakingTrick(auto TinyKart, float closestY){
+std::optional<ScanPoint> angle_find_gap(const std::vector<ScanPoint> &scan, float max_dist_from_ldar, float maxClusterDistance){
+    struct Node {    
+          float data;    
+          Node* next;
+    };
+
+    int number_not_zero = 0;
+    for (auto &pt : scan){
+        if( pt.dist(ScanPoint::zero()) ) {
+            number_not_zero++;
+        }
+    }
+    std::vector<ScanPoint> valid_array[number_not_zero];
+
+    int i = 0;
+    for (auto pt : scan){
+        if( pt.dist(ScanPoint::zero()) ) {
+            valid_array[i] = pt;
+        }
+    }
+
+};
+
+void doTinyKartBrakingTrick(TinyKart TinyKart, float closestY){
     brakingPercentage = slopeBreaking * closestY + 1;
 
     if(brakingPercentage > 1){
@@ -492,7 +514,7 @@ void doTinyKartBrakingTrick(auto TinyKart, float closestY){
 }
 
 
-void doTinyKartBrakingTrick(auto TinyKart, const std::vector<ScanPoint> &scan, float netural_zone, int angle){
+void doTinyKartBrakingTrick(TinyKart TinyKart, const std::vector<ScanPoint> &scan, float netural_zone, int angle){
     float closestY = 1000;
 
     double angle_constant = tan(angle * 0.01745329);
@@ -542,45 +564,62 @@ void loop() {
         // Check if frame erred
         if (scan_res) {
             auto maybe_scan = scan_builder.add_frame(scan_res.scan);
+            /// logger.printf("Yes res\n");
             // Check if we have a 180 degree scan built
             if (maybe_scan) {
                 auto scan = *maybe_scan;
+
+                /// logger.printf("maybe scan");
                 
              // run pio device monitor -b 115200
 
 
 
-                ///                          scan, min_gap_size, max_dist, min_dist, rDist
-                auto target_pt = find_gap_naive( scan, 2.5, 5, 0, 1.0, 1);
+                ///                          scan, min_gap_size, max_dist, min_dist, rDist, leave as one
+                /**
+                 * min_gap_size is the smallest that the gap can be
+                 * max_dist is the maxium length from the lidar that the point can be.
+                 * min_dist is the minium length between points. 
+                 * rDist is the radius of exlucdion
+                 * the last point is left as one
+                */
+                auto target_pt = find_gap_naive( scan, 0.1, 10, 0.001, 0.00, 1);
+                if( !(target_pt.has_value()) ){
+                                                // scan, max distance from idar, max cluster size
+                    /// target_pt = find_closest_point(scan, 8, 1 );
+                }
+
                 
-                
+                tinyKart->set_forward(.20);
                 if( (target_pt.has_value()) ){
 
                     ///float steering_angle = pure_pursuit_but_with_glasses(tinyKart, target_pt.value(), 0.2);
                      double steering_angle = calculate_command_to_point(tinyKart, target_pt.value(), 4);
-
+                    /*
                     if( target_pt.value().x > 0 ){
                         steering_angle = steering_angle*-1;
-                    }
+                    }*/
                     tinyKart->set_steering(steering_angle); // STEER WITH ANGLE
+                    tinyKart->set_forward(16);
                     /// GUI PRINTING
-                    logger.printf( " goal (x %i [mm], y %i [mm]) \n ang [degrees] %i \n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000), 
-                        (int32_t) (steering_angle * 10 ) );
+                    /// logger.printf( " goal (x %i [mm], y %i [mm]) \n ang [degrees] %i \n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000), 
+                    ///    (int32_t) (steering_angle * 100 ) );
                     if(steering_angle > 0){
                         logger.printf("Left \n");   
                     } else {
                         logger.printf("Right \n");
                     }
+                    logger.printf(" %i \n", (int16_t) scan.size());
                     tinyKart->set_forward(0.16);
                     digitalWrite(LED_RED, HIGH); // RED LIGHT ON IF TARGET FOUND
                 } else {
 
-                    tinyKart->set_steering(0.0); // NO TARGET SO CONTINUE FORWARD
+                    //tinyKart->set_steering(0.0); // NO TARGET SO CONTINUE FORWARD
                     tinyKart->set_forward(0.16);
                     /// doTinyKartBrakingTrick(tinyKart, scan, 0, 45);
-                    /// tinyKart->set_neutral();
+                    tinyKart->set_neutral();
                     digitalWrite(LED_RED, LOW); // RED LIGHT OFF NO TARGET
-                    /// logger.printf("no target \n no ang\n");
+                    // logger.printf("no target \n no ang\n");
                 }
             }
         } else {
@@ -596,6 +635,9 @@ void loop() {
             }
         }
     }else {
-        //// logger.printf("no res\n");
+        // logger.printf("no res\n");
+        /// tinyKart->set_forward(0.1);
+        /// tinyKart->set_steering(0.0);
+        
     }
 }

@@ -45,7 +45,9 @@
         "streambuf": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "iostream": "cpp",
+        "istream": "cpp"
     },
     "cmake.configureOnOpen": true
 }

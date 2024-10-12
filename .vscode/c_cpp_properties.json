@@ -38,6 +38,7 @@
                 "C:/Users/bocca/.platformio/packages/framework-cmsis/CMSIS/DSP/PrivateInclude",
                 "C:/Users/bocca/.platformio/packages/framework-arduinoststm32/cores/arduino",
                 "C:/Users/bocca/.platformio/packages/framework-arduinoststm32/variants/STM32H7xx/H723Z(E-G)T_H730ZBT_H733ZGT",
+                "C:/Users/bocca/OneDrive/Documents/GitHub/tinykart-Alexander---Derek/lib/redtoo_gap_follower",
                 "C:/Users/bocca/.platformio/packages/framework-arduinoststm32/libraries/CMSIS_DSP/src",
                 "C:/Users/bocca/.platformio/packages/framework-arduinoststm32/libraries/EEPROM/src",
                 "C:/Users/bocca/.platformio/packages/framework-arduinoststm32/libraries/IWatchdog/src",
@@ -84,6 +85,7 @@
                     "C:/Users/bocca/.platformio/packages/framework-cmsis/CMSIS/DSP/PrivateInclude",
                     "C:/Users/bocca/.platformio/packages/framework-arduinoststm32/cores/arduino",
                     "C:/Users/bocca/.platformio/packages/framework-arduinoststm32/variants/STM32H7xx/H723Z(E-G)T_H730ZBT_H733ZGT",
+                    "C:/Users/bocca/OneDrive/Documents/GitHub/tinykart-Alexander---Derek/lib/redtoo_gap_follower",
                     "C:/Users/bocca/.platformio/packages/framework-arduinoststm32/libraries/CMSIS_DSP/src",
                     "C:/Users/bocca/.platformio/packages/framework-arduinoststm32/libraries/EEPROM/src",
                     "C:/Users/bocca/.platformio/packages/framework-arduinoststm32/libraries/IWatchdog/src",
@@ -99,7 +101,7 @@
                 ]
             },
             "defines": [
-                "PLATFORMIO=60115",
+                "PLATFORMIO=60116",
                 "STM32H7xx",
                 "STM32H723xx",
                 "ENABLE_HWSERIAL5",
