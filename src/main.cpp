@@ -390,12 +390,22 @@ void loop() {
             auto maybe_scan = scan_builder.add_frame(scan_res.scan);
             // Check if we have a 180 degree scan built
             if (maybe_scan) {
-                auto scan = *maybe_scan;
+
                 
+                auto scan = *maybe_scan;
+
+                float front_obj_dist = scan[ floor( scan.size() / 2 ) ].dist(ScanPoint::zero());
+
+                // If object is 45cm in front of kart, stop (0.0 means bad point)
+                if (front_obj_dist != 0.0 && front_obj_dist < 0.25 + 0.1524) {
+                    logger.printf("Stopping because of object: %himm in front! \n", (int16_t) (front_obj_dist * 1000));
+                    tinyKart->pause();
+                    digitalWrite(LED_YELLOW, HIGH);
+                }
              // run pio device monitor -b 115200
              // online research ingores the fact that most of this is custom writtern
-
-                auto target_pt = find_gap_naive( scan, 1.5, 5, 0.5);
+                // scan, 1.5, 5, 0.5
+                auto target_pt = find_gap_naive( scan, 1.5, 5, 0.0);
                 
                 
                 if( (target_pt.has_value()) ){
