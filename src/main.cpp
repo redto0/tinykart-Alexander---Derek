@@ -373,7 +373,26 @@ void doTinyKartBrakingTrick(auto TinyKart, const std::vector<ScanPoint> &scan, f
     }// end forward/back code
 }
 
+std::optional<ScanPoint> find_closest_point(const std::vector<ScanPoint> &scan){
+    float min_dist = 10;
+    int min_pointer = -1;
+    float angle_constant = 1;
+    for(auto i = 0; i < scan.size(); i++){
+        float dist = scan[i].dist(ScanPoint::zero());
+        if ( dist > 0.15) break;
+        if ( scan[i].y/scan[i].x > angle_constant || scan[i].y/scan[i].x < -angle_constant)
+        if ( min_dist > dist) {
+            min_pointer = i;
+            min_dist = dist;
+        }
+    }
+    if( min_pointer ==  -1){
+        return std::nullopt;
+    } else {
+        return scan[min_pointer];
+    }
 
+}
 void loop() {
     noInterrupts();
     auto res = ld06.get_scan();
@@ -397,7 +416,7 @@ void loop() {
                 float front_obj_dist = scan[ floor( scan.size() / 2 ) ].dist(ScanPoint::zero());
 
                 // If object is 45cm in front of kart, stop (0.0 means bad point)
-                if (front_obj_dist != 0.0 && front_obj_dist < 0.25 + 0.1524) {
+                if (front_obj_dist != 0.0 && front_obj_dist < 0.15 + 0.1524) {
                     logger.printf("Stopping because of object: %himm in front! \n", (int16_t) (front_obj_dist * 1000));
                     tinyKart->pause();
                     digitalWrite(LED_YELLOW, HIGH);
@@ -405,7 +424,7 @@ void loop() {
              // run pio device monitor -b 115200
              // online research ingores the fact that most of this is custom writtern
                 // scan, 1.5, 5, 0.5
-                auto target_pt = find_gap_naive( scan, 1.5, 5, 0.0);
+                auto target_pt = find_closest_point( scan );
                 
                 
                 if( (target_pt.has_value()) ){
@@ -416,15 +435,15 @@ void loop() {
                     (int32_t) (steering_angle * 10 ) );
 
                     /// auto powerBoost = abs( ( steering_angle / 24.0) * 0.005 ); //0.025
-                    tinyKart->set_forward(0.19);
-                    digitalWrite(LED_RED, HIGH); // RED LIGHT ON IF TARGET FOUND
+                    //tinyKart->set_forward(0.19);
+                    digitalWrite(LED_RED, LOW); // RED LIGHT ON IF TARGET FOUND
                 } else {
 
                     tinyKart->set_steering(0.0); // NO TARGET SO CONTINUE FORWARD
-                    tinyKart->set_forward(0.17);
+                    //tinyKart->set_forward(0.17);
                     /// doTinyKartBrakingTrick(tinyKart, scan, 0, 45);
                     /// tinyKart->set_neutral();
-                    digitalWrite(LED_RED, LOW); // RED LIGHT OFF NO TARGET
+                    digitalWrite(LED_RED, HIGH); // RED LIGHT OFF NO TARGET
                 }
             }
         } else {
