@@ -373,6 +373,92 @@ void doTinyKartBrakingTrick(auto TinyKart, const std::vector<ScanPoint> &scan, f
     }// end forward/back code
 }
 
+std::optional<ScanPoint> find_middle_point_scaned_like_there_cones(const std::vector<ScanPoint> &scan, float max_dist ){
+    // float max_dist = 4.0;
+    // the array of all valid scan points
+    std::vector<ScanPoint> valid_points;
+    std::vector<float> angs;
+    std::vector<ScanPoint> path_points;
+
+    // find valid points
+    for (auto &pt: scan) {
+        if((pt.x != 0 || pt.y != 0) && (pt.dist(ScanPoint::zero()) < max_dist) ){
+            valid_points.push_back(pt);
+        }
+    }
+    // find the split
+    for (int i = 1; i < valid_points.size() - 1; i++ ){
+        // create vectors
+        ScanPoint P = valid_points[i-1];
+        ScanPoint M = valid_points[i];
+        ScanPoint N = valid_points[i+1];
+
+        // normalize with respect to the middle vect
+        ScanPoint dP = ScanPoint(M.x - P.x, M.y - P.y);
+        ScanPoint dN = ScanPoint(M.x - N.x, M.y - N.y);
+        ScanPoint dM = ScanPoint(0, 0);
+
+        // exam just one day, all questions from sides, recommended to go over them again. 
+        // calulate angle
+        /**
+         *               dP dot dN
+         * cos (ang)= -----------------
+         *             ||dP|| * ||dN||
+         */
+        float formula = (dP.x * dN.x + dP.y * dN.y ) / ( std::sqrt( dP.x * dP.x + dP.y * dP.y ) * std::sqrt( dN.x * dN.x + dN.y * dN.y ));
+        float ang = std::cos(formula);
+        
+        // store angle in angle vector
+        angs.push_back(ang);
+    }
+    // find the point of inflection
+    float max_point_of_inflection_value = 0.0;
+    float place_of_value = 0;
+    float counter = 0;
+    for (auto &ang: angs){
+        if(max_point_of_inflection_value < ang - 180){
+            place_of_value = counter;
+            max_point_of_inflection_value = ang;
+        }
+        counter++;
+    }// end inflection
+
+    // TODO match points
+    int counter_right = 0;
+    int counter_left = valid_points.size();
+
+    while( counter_right > place_of_value || counter_left < place_of_value ){
+        
+        // TODO mid point formula
+        auto right = valid_points[counter_right];
+        auto left = valid_points[counter_left];
+        auto middle = ScanPoint( (right.x + left.x) / 2 , ( right.y + left.y) / 2 );
+        // publish to middle points. 
+        path_points.push_back(middle);
+
+        // TODO what to do when we exceed the middle counter?        
+        
+        // incredment counters
+        counter_right++;
+        counter_left--;
+    }
+
+    // TODO point averages 
+    // this is garage and we know it
+    auto target_point = ScanPoint(0, 0);
+    for (auto &path: path_points){
+        // sum the path array
+        target_point.x += path.x;
+        target_point.y += path.y;
+    }
+
+    // average the point
+    target_point.x = target_point.x / path_points.size();
+    target_point.y = target_point.y / path_points.size();
+    return target_point;
+
+    return std::nullopt;
+}
 
 void loop() {
     noInterrupts();
@@ -397,7 +483,7 @@ void loop() {
                 float front_obj_dist = scan[ floor( scan.size() / 2 ) ].dist(ScanPoint::zero());
 
                 // If object is 45cm in front of kart, stop (0.0 means bad point)
-                if (front_obj_dist != 0.0 && front_obj_dist < 0.25 + 0.1524) {
+                if (front_obj_dist != 0.0 && front_obj_dist < 0.55 + 0.1524) {
                     logger.printf("Stopping because of object: %himm in front! \n", (int16_t) (front_obj_dist * 1000));
                     tinyKart->pause();
                     digitalWrite(LED_YELLOW, HIGH);
