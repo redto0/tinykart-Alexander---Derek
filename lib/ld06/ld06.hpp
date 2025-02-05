@@ -133,7 +133,10 @@ struct ScanPoint {
     float x;
     /// Left positive axis (m)
     float y;
-
+    ScanPoint(float x, float y){
+        this->x = x;
+        this->y = y;
+    }
     /// Distance in m between two points
     [[nodiscard]] float dist(const ScanPoint &other) const {
         return std::hypot(x - other.x, y - other.y);
