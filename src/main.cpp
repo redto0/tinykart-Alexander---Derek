@@ -458,7 +458,7 @@ std::optional<ScanPoint> find_middle_point_scaned_like_there_cones(const std::ve
     // TODO point averages 
     // this is garbage and we know it
     auto target_point = ScanPoint(0, 10);
-    for (auto path: path_points){
+    for (auto &path: path_points){
         // sum the path array
         target_point.x += path.x;
         target_point.y += path.y;
@@ -510,11 +510,13 @@ void loop() {
                 
                 
                 if( (target_pt.has_value()) ){
+                    auto command = pure_pursuit::calculate_command_to_point(tinyKart, target_pt.value(), 3.0);
                     float steering_angle = pure_pursuit_but_sillier(tinyKart, target_pt.value(), 0);
                     /// steering_angle = pure_pursuit::calculate_command_to_point(tinyKart, target_pt.value(), 4).steering_angle;
-                    tinyKart->set_steering(steering_angle); // STEER WITH ANGLE FROM SILLIER
+                    // tinyKart->set_steering(steering_angle); // STEER WITH ANGLE FROM SILLIER
+                    tinyKart->set_steering(command.steering_angle);
                     logger.printf( "(%i x, %i y) ang %i \n", (int16_t)(target_pt.value().x*1000), (int16_t)(target_pt.value().y*1000), 
-                    (int32_t) (steering_angle * 10 ) );
+                    (int32_t) (command.steering_angle * 10 ) );
 
                     /// auto powerBoost = abs( ( steering_angle / 24.0) * 0.005 ); //0.025
                     // tinyKart->set_forward(0.17);
