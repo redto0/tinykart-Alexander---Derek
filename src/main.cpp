@@ -99,7 +99,7 @@ std::optional<ScanPoint> find_closest_point(const std::vector<ScanPoint> &scan, 
     }
 
     int current_first = 0;
-    ScanPoint closest_scan ;
+    ScanPoint closest_scan = ScanPoint(0, 0);
     closest_scan.x = 1000;
     bool is_last_a_zero = false;
     int start = 0;
@@ -125,7 +125,7 @@ std::optional<ScanPoint> find_closest_point(const std::vector<ScanPoint> &scan, 
                     } else {
                         // check the object
                         // create a mid point from the past ones
-                        ScanPoint new_scan;
+                        ScanPoint new_scan = ScanPoint(0, 0);
                         new_scan.x = ( scan[current_first].x + scan[i].x ) / 2;
                         new_scan.y = ( scan[current_first].y + scan[i].y ) / 2;
 
@@ -157,7 +157,7 @@ std::optional<ScanPoint> find_closest_point(const std::vector<ScanPoint> &scan, 
                         current_first = i;
                     } else {
                         // create a mid point from the past ones
-                        ScanPoint new_scan;
+                        ScanPoint new_scan = ScanPoint(0, 0);
                         new_scan.x = ( scan[current_first].x + scan[i].x ) / 2;
                         new_scan.y = ( scan[current_first].y + scan[i].y ) / 2;
 
