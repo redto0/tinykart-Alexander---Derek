@@ -377,14 +377,22 @@ std::optional<ScanPoint> find_middle_point_scaned_like_there_cones(const std::ve
     // float max_dist = 4.0;
     // the array of all valid scan points
     std::vector<ScanPoint> valid_points;
+    // array og angles
     std::vector<float> angs;
+    // array of valid paths. 
     std::vector<ScanPoint> path_points;
 
     // find valid points
-    for (auto &pt: scan) {
-        if((pt.x != 0 || pt.y != 0) && (pt.dist(ScanPoint::zero()) < max_dist) ){
-            valid_points.push_back(pt);
+    for (int i = 0; i < scan.size(); i++) {
+        // check if not zero and within the maxium tolerance. 
+        if((scan[i].x != 0 || scan[i].y != 0) /*&& (pt.dist(ScanPoint::zero()) < max_dist)*/ ){
+            valid_points.push_back(scan[i]);
         }
+    }
+
+    if(valid_points.size() < 10){
+        logger.printf("no valid points! \n");
+        return std::nullopt;
     }
     // find the split
     for (int i = 1; i < valid_points.size() - 1; i++ ){
@@ -405,8 +413,9 @@ std::optional<ScanPoint> find_middle_point_scaned_like_there_cones(const std::ve
          * cos (ang)= -----------------
          *             ||dP|| * ||dN||
          */
+        // the monster
         float formula = (dP.x * dN.x + dP.y * dN.y ) / ( std::sqrt( dP.x * dP.x + dP.y * dP.y ) * std::sqrt( dN.x * dN.x + dN.y * dN.y ));
-        float ang = std::cos(formula);
+        float ang = std::acos(formula);
         
         // store angle in angle vector
         angs.push_back(ang);
@@ -416,7 +425,7 @@ std::optional<ScanPoint> find_middle_point_scaned_like_there_cones(const std::ve
     float place_of_value = 0;
     float counter = 0;
     for (auto &ang: angs){
-        if(max_point_of_inflection_value < ang - 180){
+        if(max_point_of_inflection_value < std::abs( ang - 180 )){
             place_of_value = counter;
             max_point_of_inflection_value = ang;
         }
@@ -427,7 +436,7 @@ std::optional<ScanPoint> find_middle_point_scaned_like_there_cones(const std::ve
     int counter_right = 0;
     int counter_left = valid_points.size();
 
-    while( counter_right > place_of_value || counter_left < place_of_value ){
+    while( counter_right < place_of_value || counter_left > place_of_value ){
         
         // TODO mid point formula
         auto right = valid_points[counter_right];
@@ -441,17 +450,22 @@ std::optional<ScanPoint> find_middle_point_scaned_like_there_cones(const std::ve
         // incredment counters
         counter_right++;
         counter_left--;
-    }
+    }// place_of_value
+    int size = path_points.size();
+    // logger.printf( " ang: %hu, index: %hu \n", (int16_t)(max_point_of_inflection_value * 1000), (int16_t)(place_of_value ) );
+    // logger.printf(" size: %hu\n", (int16_t)(size));
 
     // TODO point averages 
-    // this is garage and we know it
-    auto target_point = ScanPoint(0, 0);
-    for (auto &path: path_points){
+    // this is garbage and we know it
+    auto target_point = ScanPoint(0, 10);
+    for (auto path: path_points){
         // sum the path array
         target_point.x += path.x;
         target_point.y += path.y;
     }
-
+    // check for zero point
+    if(target_point.y == 10) return std::nullopt;
+    
     // average the point
     target_point.x = target_point.x / path_points.size();
     target_point.y = target_point.y / path_points.size();
@@ -479,7 +493,7 @@ void loop() {
 
                 
                 auto scan = *maybe_scan;
-
+                // logger.printf("Scan: %hu", (int16_t)(scan.size()));
                 float front_obj_dist = scan[ floor( scan.size() / 2 ) ].dist(ScanPoint::zero());
 
                 // If object is 45cm in front of kart, stop (0.0 means bad point)
@@ -491,23 +505,24 @@ void loop() {
              // run pio device monitor -b 115200
              // online research ingores the fact that most of this is custom writtern
                 // scan, 1.5, 5, 0.5
-                auto target_pt = find_gap_naive( scan, 1.5, 5, 0.0);
+                // auto target_pt = find_gap_naive( scan, 1.5, 5, 0.0);
+                auto target_pt = find_middle_point_scaned_like_there_cones( scan, 50.0 );
                 
                 
                 if( (target_pt.has_value()) ){
                     float steering_angle = pure_pursuit_but_sillier(tinyKart, target_pt.value(), 0);
                     /// steering_angle = pure_pursuit::calculate_command_to_point(tinyKart, target_pt.value(), 4).steering_angle;
                     tinyKart->set_steering(steering_angle); // STEER WITH ANGLE FROM SILLIER
-                    logger.printf( "(%i x, %i y) ang %i \n", (int32_t)(target_pt.value().x*1000), (int32_t)(target_pt.value().y*1000), 
+                    logger.printf( "(%i x, %i y) ang %i \n", (int16_t)(target_pt.value().x*1000), (int16_t)(target_pt.value().y*1000), 
                     (int32_t) (steering_angle * 10 ) );
 
                     /// auto powerBoost = abs( ( steering_angle / 24.0) * 0.005 ); //0.025
-                    tinyKart->set_forward(0.19);
+                    // tinyKart->set_forward(0.17);
                     digitalWrite(LED_RED, HIGH); // RED LIGHT ON IF TARGET FOUND
                 } else {
 
                     tinyKart->set_steering(0.0); // NO TARGET SO CONTINUE FORWARD
-                    tinyKart->set_forward(0.17);
+                    tinyKart->set_forward(0.0);
                     /// doTinyKartBrakingTrick(tinyKart, scan, 0, 45);
                     /// tinyKart->set_neutral();
                     digitalWrite(LED_RED, LOW); // RED LIGHT OFF NO TARGET
